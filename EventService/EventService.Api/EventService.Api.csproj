@@ -9,13 +9,22 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
-        <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
     </ItemGroup>
 
     <ItemGroup>
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Extensions\Startup\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\AspNet.Common\AspNet.Common.csproj" />
+      <ProjectReference Include="..\..\Ems.Common\Ems.Common.csproj" />
+      <ProjectReference Include="..\EventService.Data\EventService.Data.csproj" />
     </ItemGroup>
 
 </Project>

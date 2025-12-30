@@ -1,11 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventManagementSolution.Api", "EventManagementSolution.Api\EventManagementSolution.Api.csproj", "{45CA1A57-8BAF-4E63-BA17-04ECF2DB44FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventService.Api", "EventService\EventService.Api\EventService.Api.csproj", "{45CA1A57-8BAF-4E63-BA17-04ECF2DB44FE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{68BA6C05-8B8C-460A-9073-55CE9B17884C}"
 	ProjectSection(SolutionItems) = preProject
 		compose.yaml = compose.yaml
+		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventService", "EventService", "{35B05629-FE2A-4962-A1AC-B8C863E50C82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventService.Data", "EventService\EventService.Data\EventService.Data.csproj", "{F10D294F-E4E1-495C-A87A-F38CE4C3CB0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNet.Common", "AspNet.Common\AspNet.Common.csproj", "{111B8B1C-4F40-4D8D-9D85-E42D332F44BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ems.Common", "Ems.Common\Ems.Common.csproj", "{83088FC5-0737-44F2-BF4B-294E175A1B49}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,5 +26,21 @@ Global
 		{45CA1A57-8BAF-4E63-BA17-04ECF2DB44FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45CA1A57-8BAF-4E63-BA17-04ECF2DB44FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45CA1A57-8BAF-4E63-BA17-04ECF2DB44FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F10D294F-E4E1-495C-A87A-F38CE4C3CB0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F10D294F-E4E1-495C-A87A-F38CE4C3CB0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F10D294F-E4E1-495C-A87A-F38CE4C3CB0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F10D294F-E4E1-495C-A87A-F38CE4C3CB0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{111B8B1C-4F40-4D8D-9D85-E42D332F44BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{111B8B1C-4F40-4D8D-9D85-E42D332F44BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{111B8B1C-4F40-4D8D-9D85-E42D332F44BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{111B8B1C-4F40-4D8D-9D85-E42D332F44BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83088FC5-0737-44F2-BF4B-294E175A1B49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83088FC5-0737-44F2-BF4B-294E175A1B49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83088FC5-0737-44F2-BF4B-294E175A1B49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83088FC5-0737-44F2-BF4B-294E175A1B49}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{45CA1A57-8BAF-4E63-BA17-04ECF2DB44FE} = {35B05629-FE2A-4962-A1AC-B8C863E50C82}
+		{F10D294F-E4E1-495C-A87A-F38CE4C3CB0E} = {35B05629-FE2A-4962-A1AC-B8C863E50C82}
 	EndGlobalSection
 EndGlobal

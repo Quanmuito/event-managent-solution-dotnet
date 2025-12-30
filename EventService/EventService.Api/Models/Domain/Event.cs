@@ -1,9 +1,10 @@
-using EventManagementSolution.Api.Event.Dtos;
+namespace EventService.Api.Models.Domain;
+
+using EventService.Api.Models.Api.Event;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace EventManagementSolution.Api.Event;
-public class EventEntity
+public class Event
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -39,9 +40,9 @@ public class EventEntity
     [BsonIgnoreIfNull]
     public DateTime? UpdatedAt { get; set; } = null;
 
-    public static EventEntity GetEntityFromDto(CreateEventDto dto)
+    public static Event GetEntityFromDto(CreateEventDto dto)
     {
-        return new EventEntity
+        return new Event
         {
             Title = dto.Title,
             HostedBy = dto.HostedBy,

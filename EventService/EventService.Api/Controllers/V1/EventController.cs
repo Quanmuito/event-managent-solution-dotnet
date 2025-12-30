@@ -1,18 +1,25 @@
-using Microsoft.AspNetCore.Mvc;
-using EventManagementSolution.Api.Event.Dtos;
-using EventManagementSolution.Api.Services;
+namespace EventService.Api.Controllers.V1;
 
-namespace EventManagementSolution.Api.Event.V1;
+using Data;
+using Services;
+using Microsoft.AspNetCore.Mvc;
+using Models.Api.Event;
 
 [ApiController]
-[Route("v1/[controller]")]
-public class EventController(ILogger<EventController> logger, MongoDbService mongoService) : ControllerBase
+[Route("/v{version:apiVersion}/events")]
+//TODO: Controller should use only services (e.g. business logic), and not any db context,
+// then services should use db context or repositories to access data
+public class EventController(ILogger<EventController> logger, MongoDbContext mongoService) : ControllerBase
 {
     private readonly EventService _eventService = new(mongoService);
 
+    //TODO: Requests should support cancellation tokens, e.g. if search is taking much time,
+    // you might want to cancel it without blocking resources to finish the request
+    //TODO: YOu don't need a separate path for it, you just can use [HttpGet] but with a filter query
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string? query)
     {
+        logger.LogDebug("Search query: {Query}", query);
         var results = await _eventService.Search(query);
         return Ok(results);
     }
@@ -56,6 +63,10 @@ public class EventController(ILogger<EventController> logger, MongoDbService mon
     public async Task<IActionResult> Delete(string id)
     {
         var result = await _eventService.Delete(id);
+        
+        //TODO: This is should be ok, but DeleteCount property can throw an exception if the operation is unacknowledged
+        // so you should handle it properly. I would suggest to wrap ALL endpoints with a try-catch block with proper logging
+        // and if an exception occurs, return a 500 Internal Server Error and log the exception
         if (result.DeletedCount == 0)
             return NotFound();
 
