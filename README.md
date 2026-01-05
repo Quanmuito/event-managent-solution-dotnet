@@ -45,15 +45,17 @@ This is a learning project to get an understand on <strong>microservices</strong
 
 ### Identify Microservices
 
-- Database service 
-- Auth service (authentication and authorization)
-- Events service
+- Database service ✅
+- Events service ✅
     - List all events
     - List all events based on profile’s preferences (e.g. language)
     - List my events
     - Search / Filter events by its data
     - Update events
     - Delete events
+- Auth service 
+    - Authentication
+    - Authorization
 - Booking service
     - Register for event
     - Cancel registration
