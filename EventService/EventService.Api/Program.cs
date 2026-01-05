@@ -1,10 +1,8 @@
 using Asp.Versioning;
 using Ems.Common.Extensions.Startup;
-using EventService.Api.Services;
 using EventService.Data;
 using EventService.Data.Settings;
-using Serilog;
-using ILogger = Serilog.ILogger;
+using Microsoft.AspNetCore.Diagnostics;
 
 const string environmentVariablesPrefix = "EventService_";
 ApiVersion apiVersion = new(1, 0);
@@ -15,7 +13,7 @@ try
     builder.Configuration.AddEnvironmentVariables(prefix: environmentVariablesPrefix);
     ConfigureLogging(builder.Host);
     ConfigureServices(builder.Services, builder.Configuration);
-    
+
     var app = builder.Build();
     _ = app.Services.GetRequiredService<ILogger<Program>>();
     ConfigureMiddleware(app);
@@ -40,13 +38,15 @@ void ConfigureLogging(IHostBuilder builder)
 void ConfigureServices(IServiceCollection services, ConfigurationManager configuration)
 {
     services.Configure<MongoDbSettings>(configuration.GetSection("MongoDb"));
-    
+
     services.AddControllers();
     services.AddOpenApi();
-    
+
     services.AddEndpointsApiExplorer();
     services.AddSingleton<MongoDbContext>();
-    
+
+    services.AddHealthChecks();
+
     // Add API versioning
     services.AddApiVersioning(options =>
     {
@@ -58,7 +58,29 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
 
 void ConfigureMiddleware(WebApplication app)
 {
-    //TODO: Add at least global error handling middleware
+    app.UseExceptionHandler(appError =>
+    {
+        appError.Run(async context =>
+        {
+            var statusCode = StatusCodes.Status500InternalServerError;
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/json";
+
+            var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
+            if (contextFeature != null)
+            {
+                var errorMessage = !string.IsNullOrWhiteSpace(contextFeature.Error?.Message)
+                    ? contextFeature.Error.Message
+                    : "Oops! Something went wrong...";
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    StatusCode = statusCode,
+                    Message = errorMessage
+                });
+            }
+        });
+    });
 }
 
 void ConfigureEndpoints(WebApplication app)
@@ -70,5 +92,6 @@ void ConfigureEndpoints(WebApplication app)
 
     app.UseAuthorization();
     app.MapGet("/", () => "Hello World!");
+    app.MapHealthChecks("/health");
     app.MapControllers();
 }

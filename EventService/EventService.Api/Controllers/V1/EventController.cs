@@ -63,7 +63,7 @@ public class EventController(ILogger<EventController> logger, MongoDbContext mon
     public async Task<IActionResult> Delete(string id)
     {
         var result = await _eventService.Delete(id);
-        
+
         //TODO: This is should be ok, but DeleteCount property can throw an exception if the operation is unacknowledged
         // so you should handle it properly. I would suggest to wrap ALL endpoints with a try-catch block with proper logging
         // and if an exception occurs, return a 500 Internal Server Error and log the exception
