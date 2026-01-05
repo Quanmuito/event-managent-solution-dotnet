@@ -1,75 +1,128 @@
 namespace EventService.Api.Controllers.V1;
-
-using Data;
+using Asp.Versioning;
 using Services;
 using Microsoft.AspNetCore.Mvc;
 using Models.Api.Event;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("/v{version:apiVersion}/events")]
-//TODO: Controller should use only services (e.g. business logic), and not any db context,
-// then services should use db context or repositories to access data
-public class EventController(ILogger<EventController> logger, MongoDbContext mongoService) : ControllerBase
+public class EventController(ILogger<EventController> logger, HandleEventService eventService) : ControllerBase
 {
-    private readonly EventService _eventService = new(mongoService);
-
-    //TODO: Requests should support cancellation tokens, e.g. if search is taking much time,
-    // you might want to cancel it without blocking resources to finish the request
-    //TODO: YOu don't need a separate path for it, you just can use [HttpGet] but with a filter query
     [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] string? query)
-    {
-        logger.LogDebug("Search query: {Query}", query);
-        var results = await _eventService.Search(query);
-        return Ok(results);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(string id)
-    {
-        var result = await _eventService.GetById(id);
-        return Ok(result);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateEventDto createDto)
+    public async Task<IActionResult> Search([FromQuery] string? query, CancellationToken cancellationToken)
     {
         try
         {
-            var created = await _eventService.Create(createDto);
+            logger.LogDebug("Search query: {Query}", query);
+            var results = await eventService.Search(query, cancellationToken);
+            return Ok(results);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while searching events with query: {Query}", query);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the search request." });
+        }
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await eventService.GetById(id, cancellationToken);
+            return Ok(result);
+        }
+        catch (NullReferenceException)
+        {
+            logger.LogWarning("Event with ID '{EventId}' was not found.", id);
+            return NotFound(new { message = $"Event with ID '{id}' was not found." });
+        }
+        catch (FormatException ex)
+        {
+            logger.LogWarning(ex, "Invalid event ID format: {EventId}", id);
+            return BadRequest(new { message = "Invalid event ID format." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while retrieving event with ID: {EventId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the request." });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateEventDto createDto, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new { message = "Invalid request data.", errors = ModelState });
+        }
+
+        try
+        {
+            var created = await eventService.Create(createDto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, new EventDto(created));
         }
         catch (ArgumentException ex)
         {
+            logger.LogWarning(ex, "Invalid argument while creating event");
             return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while creating event");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the request." });
         }
     }
 
     [HttpPatch("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateEventDto updateDto)
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateEventDto updateDto, CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new { message = "Invalid request data.", errors = ModelState });
+        }
+
         try
         {
-            var updated = await _eventService.Update(id, updateDto);
+            var updated = await eventService.Update(id, updateDto, cancellationToken);
             return Ok(new EventDto(updated));
+        }
+        catch (NullReferenceException)
+        {
+            logger.LogWarning("Event with ID '{EventId}' was not found for update.", id);
+            return NotFound(new { message = $"Event with ID '{id}' was not found." });
+        }
+        catch (FormatException ex)
+        {
+            logger.LogWarning(ex, "Invalid event ID format: {EventId}", id);
+            return BadRequest(new { message = "Invalid event ID format." });
         }
         catch (ArgumentException ex)
         {
+            logger.LogWarning(ex, "Invalid argument while updating event with ID: {EventId}", id);
             return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while updating event with ID: {EventId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the request." });
         }
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(string id)
+    public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
-        var result = await _eventService.Delete(id);
+        try
+        {
+            var result = await eventService.Delete(id, cancellationToken);
 
-        //TODO: This is should be ok, but DeleteCount property can throw an exception if the operation is unacknowledged
-        // so you should handle it properly. I would suggest to wrap ALL endpoints with a try-catch block with proper logging
-        // and if an exception occurs, return a 500 Internal Server Error and log the exception
-        if (result.DeletedCount == 0)
-            return NotFound();
-
-        return NoContent();
+            return result.DeletedCount == 0 ? NotFound(new { message = $"Event with ID '{id}' was not found." }) : NoContent();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while deleting event with ID: {EventId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the delete request." });
+        }
     }
 }

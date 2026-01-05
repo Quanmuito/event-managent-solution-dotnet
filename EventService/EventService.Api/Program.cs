@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Ems.Common.Extensions.Startup;
+using EventService.Api.Services;
 using EventService.Data;
 using EventService.Data.Settings;
 using Microsoft.AspNetCore.Diagnostics;
@@ -44,6 +45,7 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
 
     services.AddEndpointsApiExplorer();
     services.AddSingleton<MongoDbContext>();
+    services.AddScoped<HandleEventService>();
 
     services.AddHealthChecks();
 
@@ -56,6 +58,9 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
     });
 }
 
+/*
+* Global error handling middleware
+**/
 void ConfigureMiddleware(WebApplication app)
 {
     app.UseExceptionHandler(appError =>

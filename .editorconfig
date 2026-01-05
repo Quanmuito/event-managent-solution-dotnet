@@ -295,3 +295,6 @@ dotnet_diagnostic.CA1851.severity = error
 # S2139: Exceptions should be either logged or rethrown but not both
 dotnet_diagnostic.S2139.severity = suggestion
 
+
+# IDE0011: Add braces
+dotnet_diagnostic.IDE0011.severity = none

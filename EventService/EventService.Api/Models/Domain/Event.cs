@@ -1,5 +1,4 @@
 namespace EventService.Api.Models.Domain;
-
 using EventService.Api.Models.Api.Event;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -46,7 +45,7 @@ public class Event
         {
             Title = dto.Title,
             HostedBy = dto.HostedBy,
-            IsPublic = dto.IsPublic ?? false,
+            IsPublic = dto.IsPublic,
             Details = dto.Details,
             TimeStart = dto.TimeStart,
             TimeEnd = dto.TimeEnd,

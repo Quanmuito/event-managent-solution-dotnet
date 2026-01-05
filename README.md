@@ -45,6 +45,7 @@ This is a learning project to get an understand on <strong>microservices</strong
 
 ### Identify Microservices
 
+- Database service 
 - Auth service (authentication and authorization)
 - Events service
     - List all events
@@ -67,7 +68,6 @@ This is a learning project to get an understand on <strong>microservices</strong
 - Notification service
     - Opt1: Send emails with specified content
     - Opt2: Send emails with pre-defined templates
-- Database service
 
 ### Language and tools
 - .NET Core 9.0
