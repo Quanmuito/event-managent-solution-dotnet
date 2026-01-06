@@ -12,6 +12,11 @@ public class EventController(ILogger<EventController> logger, HandleEventService
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string? query, CancellationToken cancellationToken)
     {
+        if (!string.IsNullOrWhiteSpace(query) && query.Length > 500)
+        {
+            return BadRequest(new { message = "Search query cannot exceed 500 characters." });
+        }
+
         try
         {
             logger.LogDebug("Search query: {Query}", query);
@@ -28,6 +33,11 @@ public class EventController(ILogger<EventController> logger, HandleEventService
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return BadRequest(new { message = "Event ID is required." });
+        }
+
         try
         {
             var result = await eventService.GetById(id, cancellationToken);
@@ -78,6 +88,11 @@ public class EventController(ILogger<EventController> logger, HandleEventService
     [HttpPatch("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] UpdateEventDto updateDto, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return BadRequest(new { message = "Event ID is required." });
+        }
+
         if (!ModelState.IsValid)
         {
             return BadRequest(new { message = "Invalid request data.", errors = ModelState });
@@ -113,6 +128,11 @@ public class EventController(ILogger<EventController> logger, HandleEventService
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return BadRequest(new { message = "Event ID is required." });
+        }
+
         try
         {
             var result = await eventService.Delete(id, cancellationToken);
