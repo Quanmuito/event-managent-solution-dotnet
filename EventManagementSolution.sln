@@ -16,6 +16,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNet.Common", "AspNet.Com
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ems.Common", "Ems.Common\Ems.Common.csproj", "{83088FC5-0737-44F2-BF4B-294E175A1B49}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit-tests", "unit-tests", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventService.Tests", "unit-tests\EventService.Tests\EventService.Tests.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,9 +42,14 @@ Global
 		{83088FC5-0737-44F2-BF4B-294E175A1B49}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83088FC5-0737-44F2-BF4B-294E175A1B49}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83088FC5-0737-44F2-BF4B-294E175A1B49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{45CA1A57-8BAF-4E63-BA17-04ECF2DB44FE} = {35B05629-FE2A-4962-A1AC-B8C863E50C82}
 		{F10D294F-E4E1-495C-A87A-F38CE4C3CB0E} = {35B05629-FE2A-4962-A1AC-B8C863E50C82}
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 	EndGlobalSection
 EndGlobal
