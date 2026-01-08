@@ -2,7 +2,7 @@
 
 ### Description
 
-This is a learning project to get an understand on <strong>microservices</strong> and learn to use <strong>C#</strong> with <strong>.NET Core</strong>.
+This is an ongoing project for learning purpose to get an understand on <strong>microservices</strong> and learn to use <strong>C#</strong> with <strong>.NET Core</strong>.
 
 ### User Stories
 
