@@ -1,9 +1,10 @@
 using Asp.Versioning;
+using Microsoft.AspNetCore.Diagnostics;
 using Ems.Common.Extensions.Startup;
 using EventService.Api.Services;
 using EventService.Data;
 using EventService.Data.Settings;
-using Microsoft.AspNetCore.Diagnostics;
+using EventService.Data.Repositories;
 
 const string environmentVariablesPrefix = "EventService_";
 ApiVersion apiVersion = new(1, 0);
@@ -45,6 +46,7 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
 
     services.AddEndpointsApiExplorer();
     services.AddSingleton<MongoDbContext>();
+    services.AddScoped<IEventRepository, EventRepository>();
     services.AddScoped<HandleEventService>();
 
     services.AddHealthChecks();

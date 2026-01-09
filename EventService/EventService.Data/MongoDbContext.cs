@@ -14,7 +14,6 @@ public class MongoDbContext
         _database = client.GetDatabase(settings.Value.DatabaseName);
     }
 
-    //TODO: Better to implement repository pattern for Mongo
     public IMongoCollection<T> GetCollection<T>(string name)
     {
         return _database.GetCollection<T>(name);

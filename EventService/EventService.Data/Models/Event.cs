@@ -1,5 +1,5 @@
-namespace EventService.Api.Models.Domain;
-using EventService.Api.Models.Api.Event;
+namespace EventService.Data.Models;
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -38,18 +38,4 @@ public class Event
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     [BsonIgnoreIfNull]
     public DateTime? UpdatedAt { get; set; } = null;
-
-    public static Event GetEntityFromDto(CreateEventDto dto)
-    {
-        return new Event
-        {
-            Title = dto.Title,
-            HostedBy = dto.HostedBy,
-            IsPublic = dto.IsPublic,
-            Details = dto.Details,
-            TimeStart = dto.TimeStart,
-            TimeEnd = dto.TimeEnd,
-            CreatedAt = DateTime.UtcNow
-        };
-    }
 }

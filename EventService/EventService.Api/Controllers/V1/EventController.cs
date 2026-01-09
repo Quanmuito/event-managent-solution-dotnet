@@ -1,8 +1,10 @@
 namespace EventService.Api.Controllers.V1;
+
 using Asp.Versioning;
-using Services;
 using Microsoft.AspNetCore.Mvc;
-using Models.Api.Event;
+using Services;
+using Models;
+using EventService.Data.Exceptions;
 
 [ApiController]
 [ApiVersion("1.0")]
@@ -43,15 +45,13 @@ public class EventController(ILogger<EventController> logger, HandleEventService
             var result = await eventService.GetById(id, cancellationToken);
             return Ok(result);
         }
-        catch (NullReferenceException)
+        catch (NotFoundException ex)
         {
-            logger.LogWarning("Event with ID '{EventId}' was not found.", id);
-            return NotFound(new { message = $"Event with ID '{id}' was not found." });
+            return NotFound(new { message = ex.Message });
         }
         catch (FormatException ex)
         {
-            logger.LogWarning(ex, "Invalid event ID format: {EventId}", id);
-            return BadRequest(new { message = "Invalid event ID format." });
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -75,7 +75,6 @@ public class EventController(ILogger<EventController> logger, HandleEventService
         }
         catch (ArgumentException ex)
         {
-            logger.LogWarning(ex, "Invalid argument while creating event");
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
@@ -103,19 +102,12 @@ public class EventController(ILogger<EventController> logger, HandleEventService
             var updated = await eventService.Update(id, updateDto, cancellationToken);
             return Ok(new EventDto(updated));
         }
-        catch (NullReferenceException)
+        catch (NotFoundException ex)
         {
-            logger.LogWarning("Event with ID '{EventId}' was not found for update.", id);
-            return NotFound(new { message = $"Event with ID '{id}' was not found." });
+            return NotFound(new { message = ex.Message });
         }
-        catch (FormatException ex)
+        catch (Exception ex) when (ex is FormatException or ArgumentException)
         {
-            logger.LogWarning(ex, "Invalid event ID format: {EventId}", id);
-            return BadRequest(new { message = "Invalid event ID format." });
-        }
-        catch (ArgumentException ex)
-        {
-            logger.LogWarning(ex, "Invalid argument while updating event with ID: {EventId}", id);
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
@@ -135,9 +127,12 @@ public class EventController(ILogger<EventController> logger, HandleEventService
 
         try
         {
-            var result = await eventService.Delete(id, cancellationToken);
-
-            return result.DeletedCount == 0 ? NotFound(new { message = $"Event with ID '{id}' was not found." }) : NoContent();
+            var deleted = await eventService.Delete(id, cancellationToken);
+            return deleted ? NoContent() : NotFound(new { message = $"Event with ID '{id}' was not found." });
+        }
+        catch (FormatException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {

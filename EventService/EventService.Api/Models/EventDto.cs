@@ -1,6 +1,6 @@
-﻿namespace EventService.Api.Models.Api.Event;
+namespace EventService.Api.Models;
 
-using Domain;
+using EventService.Data.Models;
 
 public class EventDto(Event @event)
 {

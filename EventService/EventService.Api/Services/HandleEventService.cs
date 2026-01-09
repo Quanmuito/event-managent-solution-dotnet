@@ -1,61 +1,41 @@
 ﻿namespace EventService.Api.Services;
-using System.Text.RegularExpressions;
-using Data;
-using Models.Api.Event;
-using Models.Domain;
-using MongoDB.Bson;
+
 using MongoDB.Driver;
+using EventService.Api.Models;
+using EventService.Data.Models;
+using EventService.Data.Repositories;
 
-public class HandleEventService(MongoDbContext mongoDbService)
+public class HandleEventService(IEventRepository eventRepository)
 {
-    private readonly IMongoCollection<Event> _eventCollection = mongoDbService.GetCollection<Event>("Events");
-
-    //TODO: (for sometime later) think about how many events will you store, are they all going to be retrieved at once?
-    // How about pagination? also probably sorting can be useful if your client wants to have it
     public async Task<List<EventDto>> Search(string? data, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(data))
-            return await FindAll(cancellationToken);
-
-        var keywords = data.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        if (keywords.Length == 0)
-            return await FindAll(cancellationToken);
-
-        var filters = keywords.Select(word =>
-        {
-            var escapedWord = Regex.Escape(word);
-            return Builders<Event>.Filter.Or(
-                Builders<Event>.Filter.Regex(e => e.Title, new BsonRegularExpression(escapedWord, "i")),
-                Builders<Event>.Filter.Regex(e => e.Details, new BsonRegularExpression(escapedWord, "i"))
-            );
-        });
-
-        var combinedFilter = Builders<Event>.Filter.Or(filters);
-        var events = await _eventCollection.Find(combinedFilter).ToListAsync(cancellationToken);
-
+        var events = await eventRepository.SearchAsync(data, cancellationToken);
         return [.. events.Select(e => new EventDto(e))];
     }
 
     public async Task<EventDto> GetById(string id, CancellationToken cancellationToken)
     {
-        var eventEntity = await _eventCollection
-            .Find(e => e.Id == id)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return new EventDto(eventEntity);
+        var eventEntity = await eventRepository.GetByIdAsync(id, cancellationToken);
+        return new EventDto(eventEntity!);
     }
 
     public async Task<Event> Create(CreateEventDto createDto, CancellationToken cancellationToken)
     {
-        var newEvent = Event.GetEntityFromDto(createDto);
-        await _eventCollection.InsertOneAsync(newEvent, cancellationToken: cancellationToken);
-        return newEvent;
+        var newEvent = new Event
+        {
+            Title = createDto.Title,
+            HostedBy = createDto.HostedBy,
+            IsPublic = createDto.IsPublic,
+            Details = createDto.Details,
+            TimeStart = createDto.TimeStart,
+            TimeEnd = createDto.TimeEnd,
+            CreatedAt = DateTime.UtcNow
+        };
+        return await eventRepository.CreateAsync(newEvent, cancellationToken);
     }
 
     public async Task<Event> Update(string id, UpdateEventDto updateDto, CancellationToken cancellationToken)
     {
-
         var updates = new List<UpdateDefinition<Event>>();
 
         if (updateDto.Title != null)
@@ -83,24 +63,12 @@ public class HandleEventService(MongoDbContext mongoDbService)
 
         var updateDef = Builders<Event>.Update.Combine(updates);
 
-        var result = await _eventCollection.FindOneAndUpdateAsync(
-            e => e.Id == id,
-            updateDef,
-            new FindOneAndUpdateOptions<Event> { ReturnDocument = ReturnDocument.After },
-            cancellationToken
-        );
-
-        return result;
+        var result = await eventRepository.UpdateAsync(id, updateDef, cancellationToken);
+        return result!;
     }
 
-    public async Task<DeleteResult> Delete(string id, CancellationToken cancellationToken)
+    public async Task<bool> Delete(string id, CancellationToken cancellationToken)
     {
-        return await _eventCollection.DeleteOneAsync(e => e.Id == id, cancellationToken);
-    }
-
-    private async Task<List<EventDto>> FindAll(CancellationToken cancellationToken)
-    {
-        var events = await _eventCollection.Find(_ => true).ToListAsync(cancellationToken);
-        return [.. events.Select(e => new EventDto(e))];
+        return await eventRepository.DeleteAsync(id, cancellationToken);
     }
 }
