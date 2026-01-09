@@ -53,9 +53,6 @@ This is an ongoing project for learning purpose to get an understand on <strong>
     - Search / Filter events by its data
     - Update events
     - Delete events
-- Auth service 
-    - Authentication
-    - Authorization
 - Booking service
     - Register for event
     - Cancel registration
@@ -67,6 +64,9 @@ This is an ongoing project for learning purpose to get an understand on <strong>
     - Get queue length
     - Enqueue
     - Dequeue
+- Auth service 
+    - Authentication
+    - Authorization
 - Notification service
     - Opt1: Send emails with specified content
     - Opt2: Send emails with pre-defined templates
