@@ -1,10 +1,10 @@
 namespace EventService.Data.Tests.Repositories;
 
-using EventService.Data;
+using DatabaseService;
+using DatabaseService.Settings;
 using EventService.Data.Models;
 using EventService.Data.Repositories;
-using EventService.Data.Settings;
-using EventService.Data.Tests.Helpers;
+using TestUtilities.Helpers;
 using EventService.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Options;

@@ -1,7 +1,7 @@
-namespace EventService.Data.Tests;
+namespace DatabaseService.Tests;
 
-using EventService.Data;
-using EventService.Data.Settings;
+using DatabaseService;
+using DatabaseService.Settings;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Xunit;

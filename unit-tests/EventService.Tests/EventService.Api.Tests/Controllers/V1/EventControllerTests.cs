@@ -2,10 +2,10 @@ namespace EventService.Api.Tests.Controllers.V1;
 
 using EventService.Api.Controllers.V1;
 using EventService.Api.Models;
-using EventService.Data.Models;
 using EventService.Api.Services;
+using EventService.Data.Models;
 using EventService.Data.Repositories;
-using EventService.Data.Exceptions;
+using DatabaseService.Exceptions;
 using EventService.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;

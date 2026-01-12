@@ -1,6 +1,6 @@
-namespace EventService.Data.Tests.Exceptions;
+namespace DatabaseService.Tests.Exceptions;
 
-using EventService.Data.Exceptions;
+using DatabaseService.Exceptions;
 using FluentAssertions;
 using Xunit;
 

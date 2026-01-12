@@ -1,4 +1,4 @@
-namespace EventService.Data.Tests.Helpers;
+namespace TestUtilities.Helpers;
 
 using MongoDB.Driver;
 using Moq;

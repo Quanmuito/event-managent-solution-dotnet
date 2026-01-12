@@ -24,10 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\EventService\EventService.Api\EventService.Api.csproj" />
-        <ProjectReference Include="..\..\EventService\EventService.Data\EventService.Data.csproj" />
         <ProjectReference Include="..\..\DatabaseService\DatabaseService.csproj" />
-        <ProjectReference Include="..\..\Ems.Common\Ems.Common.csproj" />
         <ProjectReference Include="..\TestUtilities\TestUtilities.csproj" />
     </ItemGroup>
 

@@ -1,10 +1,10 @@
 namespace EventService.Api.Tests.Services;
 
 using EventService.Api.Models;
-using EventService.Data.Models;
 using EventService.Api.Services;
+using EventService.Data.Models;
 using EventService.Data.Repositories;
-using EventService.Data.Exceptions;
+using DatabaseService.Exceptions;
 using EventService.Tests.Helpers;
 using FluentAssertions;
 using MongoDB.Driver;

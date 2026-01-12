@@ -1,12 +1,11 @@
-namespace EventService.Data.Tests.Repositories;
+namespace DatabaseService.Tests.Repositories;
 
-using EventService.Data;
-using EventService.Data.Exceptions;
-using EventService.Data.Models;
-using EventService.Data.Repositories;
-using EventService.Data.Settings;
-using EventService.Data.Tests.Helpers;
-using EventService.Tests.Helpers;
+using DatabaseService;
+using DatabaseService.Exceptions;
+using DatabaseService.Repositories;
+using DatabaseService.Settings;
+using TestUtilities.Helpers;
+using DatabaseService.Tests.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -16,8 +15,8 @@ using Xunit;
 public class RepositoryTests
 {
     private readonly Mock<MongoDbContext> _mockMongoDbContext;
-    private readonly Mock<IMongoCollection<Event>> _mockCollection;
-    private readonly Repository<Event> _repository;
+    private readonly Mock<IMongoCollection<TestEntity>> _mockCollection;
+    private readonly Repository<TestEntity> _repository;
 
     public RepositoryTests()
     {
@@ -28,35 +27,35 @@ public class RepositoryTests
             DatabaseName = "test-db"
         });
         _mockMongoDbContext = new Mock<MongoDbContext>(mockOptions.Object) { CallBase = true };
-        _mockCollection = new Mock<IMongoCollection<Event>>(MockBehavior.Loose);
-        _mockMongoDbContext.Setup(x => x.GetCollection<Event>("TestCollection")).Returns(_mockCollection.Object);
-        _repository = new Repository<Event>(_mockMongoDbContext.Object, "TestCollection");
+        _mockCollection = new Mock<IMongoCollection<TestEntity>>(MockBehavior.Loose);
+        _mockMongoDbContext.Setup(x => x.GetCollection<TestEntity>("TestCollection")).Returns(_mockCollection.Object);
+        _repository = new Repository<TestEntity>(_mockMongoDbContext.Object, "TestCollection");
     }
 
     [Fact]
-    public async Task GetByIdAsync_WithValidId_ShouldReturnEvent()
+    public async Task GetByIdAsync_WithValidId_ShouldReturnEntity()
     {
-        var eventId = "507f1f77bcf86cd799439011";
-        var expectedEvent = TestDataBuilder.CreateEvent(eventId);
-        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, expectedEvent);
+        var entityId = "507f1f77bcf86cd799439011";
+        var expectedEntity = TestDataBuilder.CreateTestEntity(entityId);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, expectedEntity);
 
-        var result = await _repository.GetByIdAsync(eventId, CancellationToken.None);
+        var result = await _repository.GetByIdAsync(entityId, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result!.Id.Should().Be(eventId);
-        result.Title.Should().Be(expectedEvent.Title);
+        result!.Id.Should().Be(entityId);
+        result.Title.Should().Be(expectedEntity.Title);
     }
 
     [Fact]
     public async Task GetByIdAsync_WithNonExistentId_ShouldThrowNotFoundException()
     {
-        var eventId = "507f1f77bcf86cd799439999";
+        var entityId = "507f1f77bcf86cd799439999";
         MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, null);
 
-        var act = async () => await _repository.GetByIdAsync(eventId, CancellationToken.None);
+        var act = async () => await _repository.GetByIdAsync(entityId, CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>()
-            .WithMessage($"TestCollection with ID '{eventId}' was not found.");
+            .WithMessage($"TestCollection with ID '{entityId}' was not found.");
     }
 
     [Fact]
@@ -71,20 +70,20 @@ public class RepositoryTests
     }
 
     [Fact]
-    public async Task GetAllAsync_ShouldReturnAllEvents()
+    public async Task GetAllAsync_ShouldReturnAllEntities()
     {
-        var events = new List<Event>
+        var entities = new List<TestEntity>
         {
-            TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011"),
-            TestDataBuilder.CreateEvent("507f1f77bcf86cd799439012"),
-            TestDataBuilder.CreateEvent("507f1f77bcf86cd799439013")
+            TestDataBuilder.CreateTestEntity("507f1f77bcf86cd799439011"),
+            TestDataBuilder.CreateTestEntity("507f1f77bcf86cd799439012"),
+            TestDataBuilder.CreateTestEntity("507f1f77bcf86cd799439013")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, entities);
 
         var result = await _repository.GetAllAsync(CancellationToken.None);
 
         result.Should().HaveCount(3);
-        result.Should().BeEquivalentTo(events);
+        result.Should().BeEquivalentTo(entities);
     }
 
     [Fact]
@@ -98,74 +97,74 @@ public class RepositoryTests
     }
 
     [Fact]
-    public async Task CreateAsync_ShouldInsertAndReturnEvent()
+    public async Task CreateAsync_ShouldInsertAndReturnEntity()
     {
-        var newEvent = TestDataBuilder.CreateEvent();
+        var newEntity = TestDataBuilder.CreateTestEntity();
         _mockCollection.Setup(x => x.InsertOneAsync(
-                It.IsAny<Event>(),
+                It.IsAny<TestEntity>(),
                 It.IsAny<InsertOneOptions>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var result = await _repository.CreateAsync(newEvent, CancellationToken.None);
+        var result = await _repository.CreateAsync(newEntity, CancellationToken.None);
 
-        result.Should().Be(newEvent);
+        result.Should().Be(newEntity);
         _mockCollection.Verify(x => x.InsertOneAsync(
-            It.Is<Event>(e => e.Id == newEvent.Id && e.Title == newEvent.Title),
+            It.Is<TestEntity>(e => e.Id == newEntity.Id && e.Title == newEntity.Title),
             It.IsAny<InsertOneOptions>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task UpdateAsync_WithValidId_ShouldUpdateAndReturnEvent()
+    public async Task UpdateAsync_WithValidId_ShouldUpdateAndReturnEntity()
     {
-        var eventId = "507f1f77bcf86cd799439011";
-        var updatedEvent = TestDataBuilder.CreateEvent(eventId);
-        updatedEvent.Title = "Updated Title";
-        var updateDefinition = Builders<Event>.Update.Set(e => e.Title, "Updated Title");
+        var entityId = "507f1f77bcf86cd799439011";
+        var updatedEntity = TestDataBuilder.CreateTestEntity(entityId);
+        updatedEntity.Title = "Updated Title";
+        var updateDefinition = Builders<TestEntity>.Update.Set(e => e.Title, "Updated Title");
 
         _mockCollection.Setup(x => x.FindOneAndUpdateAsync(
-                It.IsAny<FilterDefinition<Event>>(),
-                It.IsAny<UpdateDefinition<Event>>(),
-                It.IsAny<FindOneAndUpdateOptions<Event>>(),
+                It.IsAny<FilterDefinition<TestEntity>>(),
+                It.IsAny<UpdateDefinition<TestEntity>>(),
+                It.IsAny<FindOneAndUpdateOptions<TestEntity>>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(updatedEvent);
+            .ReturnsAsync(updatedEntity);
 
-        var result = await _repository.UpdateAsync(eventId, updateDefinition, CancellationToken.None);
+        var result = await _repository.UpdateAsync(entityId, updateDefinition, CancellationToken.None);
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("Updated Title");
         _mockCollection.Verify(x => x.FindOneAndUpdateAsync(
-            It.IsAny<FilterDefinition<Event>>(),
-            It.IsAny<UpdateDefinition<Event>>(),
-            It.IsAny<FindOneAndUpdateOptions<Event>>(),
+            It.IsAny<FilterDefinition<TestEntity>>(),
+            It.IsAny<UpdateDefinition<TestEntity>>(),
+            It.IsAny<FindOneAndUpdateOptions<TestEntity>>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task UpdateAsync_WithNonExistentId_ShouldThrowNotFoundException()
     {
-        var eventId = "507f1f77bcf86cd799439999";
-        var updateDefinition = Builders<Event>.Update.Set(e => e.Title, "Updated Title");
+        var entityId = "507f1f77bcf86cd799439999";
+        var updateDefinition = Builders<TestEntity>.Update.Set(e => e.Title, "Updated Title");
 
         _mockCollection.Setup(x => x.FindOneAndUpdateAsync(
-                It.IsAny<FilterDefinition<Event>>(),
-                It.IsAny<UpdateDefinition<Event>>(),
-                It.IsAny<FindOneAndUpdateOptions<Event>>(),
+                It.IsAny<FilterDefinition<TestEntity>>(),
+                It.IsAny<UpdateDefinition<TestEntity>>(),
+                It.IsAny<FindOneAndUpdateOptions<TestEntity>>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Event?)null!);
+            .ReturnsAsync((TestEntity?)null!);
 
-        var act = async () => await _repository.UpdateAsync(eventId, updateDefinition, CancellationToken.None);
+        var act = async () => await _repository.UpdateAsync(entityId, updateDefinition, CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>()
-            .WithMessage($"TestCollection with ID '{eventId}' was not found.");
+            .WithMessage($"TestCollection with ID '{entityId}' was not found.");
     }
 
     [Fact]
     public async Task UpdateAsync_WithInvalidObjectId_ShouldThrowFormatException()
     {
         var invalidId = "invalid-id";
-        var updateDefinition = Builders<Event>.Update.Set(e => e.Title, "Updated Title");
+        var updateDefinition = Builders<TestEntity>.Update.Set(e => e.Title, "Updated Title");
 
         var act = async () => await _repository.UpdateAsync(invalidId, updateDefinition, CancellationToken.None);
 
@@ -176,34 +175,34 @@ public class RepositoryTests
     [Fact]
     public async Task DeleteAsync_WithValidId_ShouldReturnTrue()
     {
-        var eventId = "507f1f77bcf86cd799439011";
+        var entityId = "507f1f77bcf86cd799439011";
         var deleteResult = new DeleteResult.Acknowledged(1);
 
         _mockCollection.Setup(x => x.DeleteOneAsync(
-                It.IsAny<FilterDefinition<Event>>(),
+                It.IsAny<FilterDefinition<TestEntity>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(deleteResult);
 
-        var result = await _repository.DeleteAsync(eventId, CancellationToken.None);
+        var result = await _repository.DeleteAsync(entityId, CancellationToken.None);
 
         result.Should().BeTrue();
         _mockCollection.Verify(x => x.DeleteOneAsync(
-            It.IsAny<FilterDefinition<Event>>(),
+            It.IsAny<FilterDefinition<TestEntity>>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task DeleteAsync_WithNonExistentId_ShouldReturnFalse()
     {
-        var eventId = "507f1f77bcf86cd799439999";
+        var entityId = "507f1f77bcf86cd799439999";
         var deleteResult = new DeleteResult.Acknowledged(0);
 
         _mockCollection.Setup(x => x.DeleteOneAsync(
-                It.IsAny<FilterDefinition<Event>>(),
+                It.IsAny<FilterDefinition<TestEntity>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(deleteResult);
 
-        var result = await _repository.DeleteAsync(eventId, CancellationToken.None);
+        var result = await _repository.DeleteAsync(entityId, CancellationToken.None);
 
         result.Should().BeFalse();
     }
