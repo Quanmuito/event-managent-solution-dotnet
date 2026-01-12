@@ -1,16 +1,14 @@
 namespace EventService.Data.Tests;
+
 using EventService.Data;
 using EventService.Data.Settings;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver;
-using Moq;
 using Xunit;
 
 public class MongoDbContextTests
 {
-    [Fact]
-    public void GetCollection_ShouldReturnCollectionWithCorrectName()
+    private static MongoDbContext CreateMongoDbContext()
     {
         var settings = new MongoDbSettings
         {
@@ -18,7 +16,13 @@ public class MongoDbContextTests
             DatabaseName = "test-db"
         };
         var options = Options.Create(settings);
-        var context = new MongoDbContext(options);
+        return new MongoDbContext(options);
+    }
+
+    [Fact]
+    public void GetCollection_ShouldReturnCollectionWithCorrectName()
+    {
+        var context = CreateMongoDbContext();
 
         var collection = context.GetCollection<TestDocument>("TestCollection");
 
@@ -29,18 +33,25 @@ public class MongoDbContextTests
     [Fact]
     public void GetCollection_ShouldReturnCollectionWithCorrectType()
     {
-        var settings = new MongoDbSettings
-        {
-            ConnectionString = "mongodb://localhost:27017",
-            DatabaseName = "test-db"
-        };
-        var options = Options.Create(settings);
-        var context = new MongoDbContext(options);
+        var context = CreateMongoDbContext();
 
         var collection = context.GetCollection<TestDocument>("TestCollection");
 
         collection.Should().NotBeNull();
-        collection.DocumentSerializer.ValueType.Should().Be(typeof(TestDocument));
+        collection.DocumentSerializer.ValueType.Should().Be<TestDocument>();
+    }
+
+    [Fact]
+    public void GetCollection_ShouldReturnDifferentCollectionsForDifferentNames()
+    {
+        var context = CreateMongoDbContext();
+
+        var collection1 = context.GetCollection<TestDocument>("Collection1");
+        var collection2 = context.GetCollection<TestDocument>("Collection2");
+
+        collection1.CollectionNamespace.CollectionName.Should().Be("Collection1");
+        collection2.CollectionNamespace.CollectionName.Should().Be("Collection2");
+        collection1.CollectionNamespace.CollectionName.Should().NotBe(collection2.CollectionNamespace.CollectionName);
     }
 
     private class TestDocument

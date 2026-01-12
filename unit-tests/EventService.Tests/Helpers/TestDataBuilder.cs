@@ -1,6 +1,7 @@
 namespace EventService.Tests.Helpers;
-using EventService.Api.Models.Api.Event;
-using EventService.Api.Models.Domain;
+
+using EventService.Api.Models;
+using EventService.Data.Models;
 
 public static class TestDataBuilder
 {
@@ -53,15 +54,15 @@ public static class TestDataBuilder
         };
     }
 
-    public static Event CreateEvent(string? id = null)
+    public static Event CreateEvent(string? id = null, string title = "Test Event", string? details = "Test event details")
     {
         return new Event
         {
             Id = id ?? "507f1f77bcf86cd799439011",
-            Title = "Test Event",
+            Title = title,
             HostedBy = "Test Host",
             IsPublic = true,
-            Details = "Test event details",
+            Details = details,
             TimeStart = DateTime.UtcNow.AddDays(1),
             TimeEnd = DateTime.UtcNow.AddDays(2),
             CreatedAt = DateTime.UtcNow,

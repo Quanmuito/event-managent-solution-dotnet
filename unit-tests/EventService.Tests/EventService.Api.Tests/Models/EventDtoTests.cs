@@ -1,6 +1,6 @@
-namespace EventService.Api.Tests.Models.Api.Event;
-using EventService.Api.Models.Api.Event;
-using EventService.Api.Models.Domain;
+namespace EventService.Api.Tests.Models;
+
+using EventService.Api.Models;
 using EventService.Tests.Helpers;
 using FluentAssertions;
 using Xunit;
@@ -71,18 +71,9 @@ public class EventDtoTests
     [Fact]
     public void Constructor_WithEventHavingAllProperties_ShouldMapCorrectly()
     {
-        var eventEntity = new Event
-        {
-            Id = "507f1f77bcf86cd799439011",
-            Title = "Test Event",
-            HostedBy = "Test Host",
-            IsPublic = false,
-            Details = "Test Details",
-            TimeStart = DateTime.UtcNow.AddDays(1),
-            TimeEnd = DateTime.UtcNow.AddDays(2),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var eventEntity = TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011", "Test Event", "Test Details");
+        eventEntity.IsPublic = false;
+        eventEntity.UpdatedAt = DateTime.UtcNow;
 
         var result = new EventDto(eventEntity);
 

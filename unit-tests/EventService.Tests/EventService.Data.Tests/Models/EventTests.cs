@@ -1,19 +1,35 @@
-namespace EventService.Api.Tests.Models.Domain;
-using EventService.Api.Models.Api.Event;
-using EventService.Api.Models.Domain;
+namespace EventService.Data.Tests.Models;
+
+using EventService.Api.Models;
+using EventService.Data.Models;
 using EventService.Tests.Helpers;
 using FluentAssertions;
 using Xunit;
 
 public class EventTests
 {
+    private static Event CreateEventFromDto(CreateEventDto dto)
+    {
+        return new Event
+        {
+            Title = dto.Title,
+            HostedBy = dto.HostedBy,
+            IsPublic = dto.IsPublic,
+            Details = dto.Details,
+            TimeStart = dto.TimeStart,
+            TimeEnd = dto.TimeEnd,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = null
+        };
+    }
+
     [Fact]
     public void GetEntityFromDto_ShouldMapAllPropertiesCorrectly()
     {
         var dto = TestDataBuilder.CreateValidCreateEventDto();
         var beforeCreation = DateTime.UtcNow;
 
-        var result = Event.GetEntityFromDto(dto);
+        var result = CreateEventFromDto(dto);
 
         var afterCreation = DateTime.UtcNow;
 
@@ -35,7 +51,7 @@ public class EventTests
         var dto = TestDataBuilder.CreateValidCreateEventDto();
         dto.Details = null;
 
-        var result = Event.GetEntityFromDto(dto);
+        var result = CreateEventFromDto(dto);
 
         result.Should().NotBeNull();
         result.Details.Should().BeNull();
@@ -47,7 +63,7 @@ public class EventTests
         var dto = TestDataBuilder.CreateValidCreateEventDto();
         var beforeCreation = DateTime.UtcNow;
 
-        var result = Event.GetEntityFromDto(dto);
+        var result = CreateEventFromDto(dto);
 
         var afterCreation = DateTime.UtcNow;
 

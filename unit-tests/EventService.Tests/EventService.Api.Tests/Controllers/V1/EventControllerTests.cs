@@ -1,48 +1,55 @@
 namespace EventService.Api.Tests.Controllers.V1;
+
 using EventService.Api.Controllers.V1;
-using EventService.Api.Models.Api.Event;
-using EventService.Api.Models.Domain;
+using EventService.Api.Models;
+using EventService.Data.Models;
 using EventService.Api.Services;
+using EventService.Data.Repositories;
+using EventService.Data.Exceptions;
 using EventService.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using Moq;
 using Xunit;
 
 public class EventControllerTests
 {
     private readonly Mock<ILogger<EventController>> _mockLogger;
-    private readonly Mock<HandleEventService> _mockEventService;
+    private readonly Mock<IEventRepository> _mockRepository;
+    private readonly HandleEventService _eventService;
     private readonly EventController _controller;
 
     public EventControllerTests()
     {
         _mockLogger = new Mock<ILogger<EventController>>();
-        _mockEventService = new Mock<HandleEventService>(Mock.Of<EventService.Data.MongoDbContext>());
-        _controller = new EventController(_mockLogger.Object, _mockEventService.Object);
+        _mockRepository = new Mock<IEventRepository>();
+        _eventService = new HandleEventService(_mockRepository.Object);
+        _controller = new EventController(_mockLogger.Object, _eventService);
     }
 
     [Fact]
     public async Task Search_WithValidQuery_ShouldReturnOk()
     {
-        var events = TestDataBuilder.CreateEventList(2).Select(e => new EventDto(e)).ToList();
-        _mockEventService.Setup(x => x.Search("test", It.IsAny<CancellationToken>()))
+        var events = TestDataBuilder.CreateEventList(2);
+        var eventDtos = events.Select(e => new EventDto(e)).ToList();
+        _mockRepository.Setup(x => x.SearchAsync("test", It.IsAny<CancellationToken>()))
             .ReturnsAsync(events);
 
         var result = await _controller.Search("test", CancellationToken.None);
 
         result.Should().BeOfType<OkObjectResult>();
         var okResult = result as OkObjectResult;
-        okResult!.Value.Should().BeEquivalentTo(events);
+        okResult!.Value.Should().BeEquivalentTo(eventDtos);
     }
 
     [Fact]
     public async Task Search_WithNullQuery_ShouldReturnOk()
     {
-        var events = TestDataBuilder.CreateEventList(3).Select(e => new EventDto(e)).ToList();
-        _mockEventService.Setup(x => x.Search(null, It.IsAny<CancellationToken>()))
+        var events = TestDataBuilder.CreateEventList(3);
+        _mockRepository.Setup(x => x.SearchAsync(null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(events);
 
         var result = await _controller.Search(null, CancellationToken.None);
@@ -65,14 +72,12 @@ public class EventControllerTests
     [Fact]
     public async Task Search_WithException_ShouldReturn500()
     {
-        _mockEventService.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.SearchAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var result = await _controller.Search("test", CancellationToken.None);
 
-        result.Should().BeOfType<ObjectResult>();
-        var objectResult = result as ObjectResult;
-        objectResult!.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        AssertInternalServerError(result);
     }
 
     [Fact]
@@ -80,8 +85,8 @@ public class EventControllerTests
     {
         var eventEntity = TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011");
         var eventDto = new EventDto(eventEntity);
-        _mockEventService.Setup(x => x.GetById("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(eventDto);
+        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventEntity);
 
         var result = await _controller.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
 
@@ -109,8 +114,8 @@ public class EventControllerTests
     [Fact]
     public async Task GetById_WithNonExistentId_ShouldReturnNotFound()
     {
-        _mockEventService.Setup(x => x.GetById(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NullReferenceException());
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new NotFoundException("Events", "507f1f77bcf86cd799439999"));
 
         var result = await _controller.GetById("507f1f77bcf86cd799439999", CancellationToken.None);
 
@@ -120,8 +125,8 @@ public class EventControllerTests
     [Fact]
     public async Task GetById_WithInvalidFormatId_ShouldReturnBadRequest()
     {
-        _mockEventService.Setup(x => x.GetById(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new FormatException("Invalid format"));
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
         var result = await _controller.GetById("invalid-id", CancellationToken.None);
 
@@ -131,14 +136,12 @@ public class EventControllerTests
     [Fact]
     public async Task GetById_WithException_ShouldReturn500()
     {
-        _mockEventService.Setup(x => x.GetById(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var result = await _controller.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
 
-        result.Should().BeOfType<ObjectResult>();
-        var objectResult = result as ObjectResult;
-        objectResult!.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        AssertInternalServerError(result);
     }
 
     [Fact]
@@ -146,7 +149,7 @@ public class EventControllerTests
     {
         var createDto = TestDataBuilder.CreateValidCreateEventDto();
         var createdEvent = TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011");
-        _mockEventService.Setup(x => x.Create(createDto, It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdEvent);
 
         var result = await _controller.Create(createDto, CancellationToken.None);
@@ -172,7 +175,7 @@ public class EventControllerTests
     public async Task Create_WithArgumentException_ShouldReturnBadRequest()
     {
         var createDto = TestDataBuilder.CreateValidCreateEventDto();
-        _mockEventService.Setup(x => x.Create(createDto, It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Invalid argument"));
 
         var result = await _controller.Create(createDto, CancellationToken.None);
@@ -184,14 +187,12 @@ public class EventControllerTests
     public async Task Create_WithException_ShouldReturn500()
     {
         var createDto = TestDataBuilder.CreateValidCreateEventDto();
-        _mockEventService.Setup(x => x.Create(createDto, It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var result = await _controller.Create(createDto, CancellationToken.None);
 
-        result.Should().BeOfType<ObjectResult>();
-        var objectResult = result as ObjectResult;
-        objectResult!.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        AssertInternalServerError(result);
     }
 
     [Fact]
@@ -200,7 +201,7 @@ public class EventControllerTests
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
         var updatedEvent = TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011");
         updatedEvent.Title = updateDto.Title!;
-        _mockEventService.Setup(x => x.Update("507f1f77bcf86cd799439011", updateDto, It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedEvent);
 
         var result = await _controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
@@ -235,8 +236,8 @@ public class EventControllerTests
     public async Task Update_WithNonExistentId_ShouldReturnNotFound()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
-        _mockEventService.Setup(x => x.Update(It.IsAny<string>(), updateDto, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NullReferenceException());
+        _mockRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new NotFoundException("Events", "507f1f77bcf86cd799439999"));
 
         var result = await _controller.Update("507f1f77bcf86cd799439999", updateDto, CancellationToken.None);
 
@@ -247,8 +248,8 @@ public class EventControllerTests
     public async Task Update_WithInvalidFormatId_ShouldReturnBadRequest()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
-        _mockEventService.Setup(x => x.Update(It.IsAny<string>(), updateDto, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new FormatException("Invalid format"));
+        _mockRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
         var result = await _controller.Update("invalid-id", updateDto, CancellationToken.None);
 
@@ -259,8 +260,8 @@ public class EventControllerTests
     public async Task Update_WithArgumentException_ShouldReturnBadRequest()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
-        _mockEventService.Setup(x => x.Update(It.IsAny<string>(), updateDto, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ArgumentException("No valid fields"));
+        _mockRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("No valid fields to update."));
 
         var result = await _controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
@@ -271,22 +272,19 @@ public class EventControllerTests
     public async Task Update_WithException_ShouldReturn500()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
-        _mockEventService.Setup(x => x.Update(It.IsAny<string>(), updateDto, It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var result = await _controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
-        result.Should().BeOfType<ObjectResult>();
-        var objectResult = result as ObjectResult;
-        objectResult!.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        AssertInternalServerError(result);
     }
 
     [Fact]
     public async Task Delete_WithValidId_ShouldReturnNoContent()
     {
-        var deleteResult = new MongoDB.Driver.DeleteResult.Acknowledged(1);
-        _mockEventService.Setup(x => x.Delete("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(deleteResult);
+        _mockRepository.Setup(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         var result = await _controller.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
@@ -304,9 +302,8 @@ public class EventControllerTests
     [Fact]
     public async Task Delete_WithNonExistentId_ShouldReturnNotFound()
     {
-        var deleteResult = new MongoDB.Driver.DeleteResult.Acknowledged(0);
-        _mockEventService.Setup(x => x.Delete(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(deleteResult);
+        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         var result = await _controller.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
 
@@ -314,13 +311,29 @@ public class EventControllerTests
     }
 
     [Fact]
+    public async Task Delete_WithInvalidFormatId_ShouldReturnBadRequest()
+    {
+        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
+
+        var result = await _controller.Delete("invalid-id", CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task Delete_WithException_ShouldReturn500()
     {
-        _mockEventService.Setup(x => x.Delete(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var result = await _controller.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
+        AssertInternalServerError(result);
+    }
+
+    private static void AssertInternalServerError(IActionResult result)
+    {
         result.Should().BeOfType<ObjectResult>();
         var objectResult = result as ObjectResult;
         objectResult!.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
