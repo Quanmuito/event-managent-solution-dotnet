@@ -2,9 +2,9 @@ namespace EventService.Api.Controllers.V1;
 
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using DatabaseService.Exceptions;
 using Services;
 using Models;
-using EventService.Data.Exceptions;
 
 [ApiController]
 [ApiVersion("1.0")]

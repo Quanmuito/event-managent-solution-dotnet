@@ -1,8 +1,8 @@
-﻿namespace EventService.Data;
+namespace DatabaseService;
 
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using Settings;
+using DatabaseService.Settings;
 
 public class MongoDbContext
 {

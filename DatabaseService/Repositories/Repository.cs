@@ -1,8 +1,8 @@
-namespace EventService.Data.Repositories;
+namespace DatabaseService.Repositories;
 
 using MongoDB.Bson;
 using MongoDB.Driver;
-using EventService.Data.Exceptions;
+using DatabaseService.Exceptions;
 
 public class Repository<T>(MongoDbContext mongoDbContext, string collectionName) : IRepository<T>
 {

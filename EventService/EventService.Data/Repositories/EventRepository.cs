@@ -2,7 +2,8 @@ namespace EventService.Data.Repositories;
 
 using System.Text.RegularExpressions;
 using EventService.Data.Models;
-using EventService.Data;
+using DatabaseService;
+using DatabaseService.Repositories;
 using MongoDB.Bson;
 using MongoDB.Driver;
 

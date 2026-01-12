@@ -1,4 +1,4 @@
-namespace EventService.Data.Settings;
+namespace DatabaseService.Settings;
 
 public class MongoDbSettings
 {

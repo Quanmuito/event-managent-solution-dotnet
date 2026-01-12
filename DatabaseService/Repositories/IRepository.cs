@@ -1,4 +1,4 @@
-namespace EventService.Data.Repositories;
+namespace DatabaseService.Repositories;
 
 using MongoDB.Driver;
 
