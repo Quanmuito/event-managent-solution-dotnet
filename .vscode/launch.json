@@ -1,30 +1,44 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            // Use IntelliSense to find out which attributes exist for C# debugging
-            // Use hover for the description of the existing attributes
-            // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md.
-            "name": ".NET Core Launch (web)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/EventService/EventService.Api/bin/Debug/net9.0/EventService.Api.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/EventService/EventService.Api",
-            "stopAtEntry": false,
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
-            }
-        },
-        {
-            "name": ".NET Core Attach",
-            "type": "coreclr",
-            "request": "attach"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "EventService.Api",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-event-service",
+      "program": "${workspaceFolder}/EventService/EventService.Api/bin/Debug/net9.0/EventService.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/EventService/EventService.Api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5000"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/Views"
+      }
+    },
+    {
+      "name": "BookingService.Api",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-booking-service",
+      "program": "${workspaceFolder}/BookingService/BookingService.Api/bin/Debug/net9.0/BookingService.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/BookingService/BookingService.Api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5001"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/Views"
+      }
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
 }
