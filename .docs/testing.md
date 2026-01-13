@@ -87,25 +87,6 @@
 - `GetEntityFromDto_ShouldHandleNullDetails` - Handles null Details correctly
 - `GetEntityFromDto_ShouldSetCreatedAtToUtcNow` - Sets CreatedAt to UtcNow when creating entity
 
-#### MongoDbContextTests.cs
-- `GetCollection_ShouldReturnCollectionWithCorrectName` - Returns collection with correct name
-- `GetCollection_ShouldReturnCollectionWithCorrectType` - Returns collection with correct type
-- `GetCollection_ShouldReturnDifferentCollectionsForDifferentNames` - Returns different collections for different names
-
-#### Repositories/RepositoryTests.cs
-- `GetByIdAsync_WithValidId_ShouldReturnEvent` - Returns event when valid id is provided
-- `GetByIdAsync_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when event doesn't exist
-- `GetByIdAsync_WithInvalidObjectId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
-- `GetAllAsync_ShouldReturnAllEvents` - Returns all events from collection
-- `GetAllAsync_WithEmptyCollection_ShouldReturnEmptyList` - Returns empty list when collection is empty
-- `CreateAsync_ShouldInsertAndReturnEvent` - Inserts and returns event when valid event is provided
-- `UpdateAsync_WithValidId_ShouldUpdateAndReturnEvent` - Updates and returns event when valid id is provided
-- `UpdateAsync_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when event doesn't exist
-- `UpdateAsync_WithInvalidObjectId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
-- `DeleteAsync_WithValidId_ShouldReturnTrue` - Returns true when event is successfully deleted
-- `DeleteAsync_WithNonExistentId_ShouldReturnFalse` - Returns false when event doesn't exist
-- `DeleteAsync_WithInvalidObjectId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
-
 #### Repositories/EventRepositoryTests.cs
 - `SearchAsync_WithNullQuery_ShouldReturnAllEvents` - Returns all events when query is null
 - `SearchAsync_WithEmptyQuery_ShouldReturnAllEvents` - Returns all events when query is empty
@@ -116,6 +97,27 @@
 - `SearchAsync_WithEmptyKeywordsAfterSplit_ShouldReturnAllEvents` - Returns all events when query contains only commas
 - `SearchAsync_WithSpecialCharacters_ShouldEscapeRegex` - Escapes special characters in search query
 - `SearchAsync_ShouldBeCaseInsensitive` - Performs case-insensitive search
+
+### DatabaseService.Tests
+
+#### MongoDbContextTests.cs
+- `GetCollection_ShouldReturnCollectionWithCorrectName` - Returns collection with correct name
+- `GetCollection_ShouldReturnCollectionWithCorrectType` - Returns collection with correct type
+- `GetCollection_ShouldReturnDifferentCollectionsForDifferentNames` - Returns different collections for different names
+
+#### Repositories/RepositoryTests.cs
+- `GetByIdAsync_WithValidId_ShouldReturnEntity` - Returns entity when valid id is provided
+- `GetByIdAsync_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when entity doesn't exist
+- `GetByIdAsync_WithInvalidObjectId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
+- `GetAllAsync_ShouldReturnAllEntities` - Returns all entities from collection
+- `GetAllAsync_WithEmptyCollection_ShouldReturnEmptyList` - Returns empty list when collection is empty
+- `CreateAsync_ShouldInsertAndReturnEntity` - Inserts and returns entity when valid entity is provided
+- `UpdateAsync_WithValidId_ShouldUpdateAndReturnEntity` - Updates and returns entity when valid id is provided
+- `UpdateAsync_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when entity doesn't exist
+- `UpdateAsync_WithInvalidObjectId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
+- `DeleteAsync_WithValidId_ShouldReturnTrue` - Returns true when entity is successfully deleted
+- `DeleteAsync_WithNonExistentId_ShouldReturnFalse` - Returns false when entity doesn't exist
+- `DeleteAsync_WithInvalidObjectId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
 
 #### Exceptions/NotFoundExceptionTests.cs
 - `NotFoundException_ShouldHaveCorrectMessage` - Has correct exception message format
