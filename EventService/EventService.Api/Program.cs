@@ -1,9 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Diagnostics;
 using Ems.Common.Extensions.Startup;
-using EventService.Api.Services;
 using DatabaseService;
 using DatabaseService.Settings;
+using EventService.Api.Services;
 using EventService.Data.Repositories;
 
 const string environmentVariablesPrefix = "EventService_";

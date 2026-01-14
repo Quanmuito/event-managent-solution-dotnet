@@ -1,9 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Diagnostics;
 using Ems.Common.Extensions.Startup;
-using BookingService.Api.Services;
 using DatabaseService;
 using DatabaseService.Settings;
+using BookingService.Api.Services;
 using BookingService.Data.Repositories;
 
 const string environmentVariablesPrefix = "BookingService_";

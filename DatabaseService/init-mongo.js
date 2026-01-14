@@ -1,4 +1,7 @@
 db.createCollection('Events');
+db.createCollection('Bookings');
+
+// Test data
 db.Events.insertMany([
     {
         title: "[AI Alliance] Trust and Safety Evaluations Initiative (TSEI)",
