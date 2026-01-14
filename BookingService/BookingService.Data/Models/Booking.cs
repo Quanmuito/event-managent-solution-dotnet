@@ -11,13 +11,30 @@ public class Booking
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
 
+    [BsonRepresentation(BsonType.ObjectId)]
+    public required string EventId { get; set; }
+
     [AllowedValues(
         BookingStatus.Registered,
         BookingStatus.Canceled,
         BookingStatus.QueueEnrolled,
-        BookingStatus.QueuePending,
-        BookingStatus.QueueConfirmed)]
+        BookingStatus.QueuePending)]
     public required string Status { get; set; }
+
+    [BsonElement("name")]
+    [Required]
+    [StringLength(100, MinimumLength = 1)]
+    public required string Name { get; set; }
+
+    [BsonElement("email")]
+    [Required]
+    [EmailAddress]
+    public required string Email { get; set; }
+
+    [BsonElement("phone")]
+    [Required]
+    [StringLength(20)]
+    public required string Phone { get; set; }
 
     [BsonElement("createdAt")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]

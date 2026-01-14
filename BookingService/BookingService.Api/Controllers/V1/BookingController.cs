@@ -96,6 +96,34 @@ public class BookingController(ILogger<BookingController> logger, HandleBookingS
         }
     }
 
+    [HttpPost("{id}/cancel")]
+    public async Task<IActionResult> Cancel(string id, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return BadRequest(new { message = "Booking ID is required." });
+        }
+
+        try
+        {
+            var canceled = await bookingService.Cancel(id, cancellationToken);
+            return Ok(new BookingDto(canceled));
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FormatException)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while canceling booking with ID: {BookingId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the cancellation request." });
+        }
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
