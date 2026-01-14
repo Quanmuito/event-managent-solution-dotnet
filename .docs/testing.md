@@ -1,5 +1,93 @@
 ## Test cases
 
+### BookingService.Api.Tests
+
+#### Controllers/V1/BookingControllerTests.cs
+- `GetById_WithValidId_ShouldReturnOk` - Returns OkObjectResult with booking when valid id is provided
+- `GetById_WithNullId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id is null
+- `GetById_WithEmptyId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id is empty
+- `GetById_WithNonExistentId_ShouldReturnNotFound` - Returns NotFoundObjectResult when booking doesn't exist
+- `GetById_WithInvalidFormatId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id format is invalid
+- `GetById_WithException_ShouldReturn500` - Returns 500 status code when exception occurs
+- `Create_WithValidDto_ShouldReturnCreatedAtAction` - Returns CreatedAtActionResult when valid dto is provided
+- `Create_WithRegisteredStatus_ShouldReturnCreatedAtAction` - Returns CreatedAtActionResult when booking is created with Registered status
+- `Create_WithQueueEnrolledStatus_ShouldReturnCreatedAtAction` - Returns CreatedAtActionResult when booking is created with QueueEnrolled status
+- `Create_WithInvalidStatus_ShouldReturnBadRequest` - Returns BadRequestObjectResult when status is invalid
+- `Create_WithInvalidModelState_ShouldReturnBadRequest` - Returns BadRequestObjectResult when model state is invalid
+- `Create_WithArgumentException_ShouldReturnBadRequest` - Returns BadRequestObjectResult when ArgumentException is thrown
+- `Create_WithException_ShouldReturn500` - Returns 500 status code when exception occurs
+- `Update_WithValidDto_ShouldReturnOk` - Returns OkObjectResult when valid dto is provided
+- `Update_WithNullId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id is null
+- `Update_WithInvalidModelState_ShouldReturnBadRequest` - Returns BadRequestObjectResult when model state is invalid
+- `Update_WithNonExistentId_ShouldReturnNotFound` - Returns NotFoundObjectResult when booking doesn't exist
+- `Update_WithInvalidFormatId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id format is invalid
+- `Update_WithArgumentException_ShouldReturnBadRequest` - Returns BadRequestObjectResult when ArgumentException is thrown
+- `Update_WithException_ShouldReturn500` - Returns 500 status code when exception occurs
+- `Cancel_WithValidId_ShouldReturnOk` - Returns OkObjectResult when booking is successfully canceled
+- `Cancel_WithNullId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id is null
+- `Cancel_WithNonExistentId_ShouldReturnNotFound` - Returns NotFoundObjectResult when booking doesn't exist
+- `Cancel_WithAlreadyCanceledBooking_ShouldReturnBadRequest` - Returns BadRequestObjectResult when booking is already canceled
+- `Cancel_WithQueueEnrolledStatus_ShouldReturnOk` - Returns OkObjectResult when QueueEnrolled booking is canceled
+- `Cancel_WithQueuePendingStatus_ShouldReturnOk` - Returns OkObjectResult when QueuePending booking is canceled
+- `Cancel_WithInvalidFormatId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id format is invalid
+- `Cancel_WithException_ShouldReturn500` - Returns 500 status code when exception occurs
+- `Delete_WithValidId_ShouldReturnNoContent` - Returns NoContentResult when valid id is provided
+- `Delete_WithNullId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id is null
+- `Delete_WithNonExistentId_ShouldReturnNotFound` - Returns NotFoundObjectResult when booking doesn't exist
+- `Delete_WithInvalidFormatId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id format is invalid
+- `Delete_WithException_ShouldReturn500` - Returns 500 status code when exception occurs
+
+#### Models/CreateBookingDtoTests.cs
+- `Validate_WithValidStatus_ShouldReturnNoValidationErrors` - Returns no validation errors when dto is valid
+- `Validate_WithValidStatusValues_ShouldReturnNoValidationErrors` - Returns no validation errors for Registered and QueueEnrolled statuses
+- `Validate_WithInvalidStatus_ShouldReturnValidationError` - Returns validation error when status is invalid
+- `Validate_WithNullStatus_ShouldReturnValidationError` - Returns validation error when Status is null
+- `Validate_WithEmptyStatus_ShouldReturnValidationError` - Returns validation error when Status is empty
+- `Validate_WithCanceledStatus_ShouldReturnValidationError` - Returns validation error when Canceled status is provided
+- `Validate_WithQueuePendingStatus_ShouldReturnValidationError` - Returns validation error when QueuePending status is provided
+
+#### Models/UpdateBookingDtoTests.cs
+- `Validate_WithValidStatus_ShouldReturnNoValidationErrors` - Returns no validation errors when dto is valid
+- `Validate_WithValidStatusValues_ShouldReturnNoValidationErrors` - Returns no validation errors for all valid statuses (Registered, Canceled, QueueEnrolled, QueuePending)
+- `Validate_WithNullStatus_ShouldReturnNoValidationErrors` - Returns no validation errors when Status is null
+- `Validate_WithAllNullFields_ShouldReturnNoValidationErrors` - Returns no validation errors when all fields are null
+- `Validate_WithInvalidStatus_ShouldReturnValidationError` - Returns validation error when status is invalid
+- `Validate_WithEmptyStatus_ShouldReturnValidationError` - Returns validation error when Status is empty
+
+#### Models/BookingDtoTests.cs
+- `Constructor_WithBooking_ShouldMapAllProperties` - Maps all properties correctly when valid booking is provided
+- `Constructor_WithBookingWithNullUpdatedAt_ShouldMapNull` - Sets UpdatedAt to null when booking has null UpdatedAt
+- `Constructor_WithDifferentStatuses_ShouldMapCorrectly` - Maps status correctly for all booking statuses
+
+#### Services/HandleBookingServiceTests.cs
+- `GetById_WithValidId_ShouldReturnBookingDto` - Returns BookingDto when valid id is provided
+- `GetById_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when booking doesn't exist
+- `GetById_WithInvalidFormatId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
+- `Create_WithRegisteredStatus_ShouldCreateSuccessfully` - Creates and returns booking when Registered status is provided
+- `Create_WithQueueEnrolledStatus_ShouldCreateSuccessfully` - Creates and returns booking when QueueEnrolled status is provided
+- `Update_WithValidDto_ShouldUpdateAndReturnBooking` - Updates and returns booking when valid dto is provided
+- `Update_WithNullStatusButOtherFields_ShouldUpdateFields` - Updates fields when Status is null but other fields are provided
+- `Update_WithNoValidFields_ShouldThrowArgumentException` - Throws ArgumentException when no valid fields are provided
+- `Update_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when booking doesn't exist
+- `Update_WithInvalidFormatId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
+- `Delete_WithValidId_ShouldDeleteAndReturnTrue` - Deletes and returns true when valid id is provided
+- `Delete_WithNonExistentId_ShouldReturnFalse` - Returns false when booking doesn't exist
+- `Delete_WithInvalidFormatId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
+- `Cancel_WithValidId_ShouldCancelAndReturnBooking` - Cancels and returns booking when valid id is provided
+- `Cancel_WithAlreadyCanceledBooking_ShouldThrowInvalidOperationException` - Throws InvalidOperationException when booking is already canceled
+- `Cancel_WithQueueEnrolledStatus_ShouldCancelSuccessfully` - Cancels booking successfully when status is QueueEnrolled
+- `Cancel_WithQueuePendingStatus_ShouldCancelSuccessfully` - Cancels booking successfully when status is QueuePending
+- `Cancel_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when booking doesn't exist
+- `Cancel_WithInvalidFormatId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
+
+### BookingService.Data.Tests
+
+#### Models/BookingTests.cs
+- `GetEntityFromDto_ShouldMapAllPropertiesCorrectly` - Maps all properties correctly from dto to entity
+- `GetEntityFromDto_WithDifferentStatuses_ShouldMapCorrectly` - Maps status correctly for all booking statuses
+- `GetEntityFromDto_ShouldSetCreatedAtToUtcNow` - Sets CreatedAt to UtcNow when creating entity
+- `Booking_WithValidStatus_ShouldHaveCorrectStatus` - Verifies booking has correct status
+
 ### EventService.Api.Tests
 
 #### Controllers/V1/EventControllerTests.cs
