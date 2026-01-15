@@ -59,11 +59,11 @@ This is an ongoing project for learning purpose to get an understand on <strong>
     - Queue enrollment
     - Queue confirmation
     - QR code generation
-    - Triggers notification for next one
 - Queue service
     - Get queue length
     - Enqueue
     - Dequeue
+    - Triggers notification for next one
 - Auth service 
     - Authentication
     - Authorization

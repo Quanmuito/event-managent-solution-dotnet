@@ -1,5 +1,6 @@
 namespace BookingService.Api.Tests.Services;
 
+using BookingService.Api.Messages;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using BookingService.Data.Models;
@@ -7,6 +8,7 @@ using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
+using Ems.Common.Services.Tasks;
 using FluentAssertions;
 using MongoDB.Driver;
 using Moq;
@@ -15,12 +17,16 @@ using Xunit;
 public class HandleBookingServiceTests
 {
     private readonly Mock<IBookingRepository> _mockRepository;
+    private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
+    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
     private readonly HandleBookingService _service;
 
     public HandleBookingServiceTests()
     {
         _mockRepository = new Mock<IBookingRepository>();
-        _service = new HandleBookingService(_mockRepository.Object);
+        _mockQrCodeRepository = new Mock<IQrCodeRepository>();
+        _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
+        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
     }
 
     [Fact]
@@ -29,6 +35,8 @@ public class HandleBookingServiceTests
         var bookingEntity = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
         _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(bookingEntity);
+        _mockQrCodeRepository.Setup(x => x.GetByBookingIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((QrCode?)null);
 
         var result = await _service.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
 
@@ -70,15 +78,23 @@ public class HandleBookingServiceTests
         createdBooking.Status = dto.Status;
 
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Booking b, CancellationToken ct) => b);
+            .ReturnsAsync((Booking b, CancellationToken ct) =>
+            {
+                b.Id = "507f1f77bcf86cd799439011";
+                return b;
+            });
 
         var result = await _service.Create(dto, CancellationToken.None);
 
         result.Should().NotBeNull();
+        result.Id.Should().Be("507f1f77bcf86cd799439011");
         result.Status.Should().Be(BookingStatus.Registered);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         _mockRepository.Verify(x => x.CreateAsync(It.Is<Booking>(b =>
             b.Status == BookingStatus.Registered), It.IsAny<CancellationToken>()), Times.Once);
+        _mockTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<QrCodeTaskMessage>(m => m.BookingId == "507f1f77bcf86cd799439011"),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -90,15 +106,23 @@ public class HandleBookingServiceTests
         createdBooking.Status = dto.Status;
 
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Booking b, CancellationToken ct) => b);
+            .ReturnsAsync((Booking b, CancellationToken ct) =>
+            {
+                b.Id = "507f1f77bcf86cd799439011";
+                return b;
+            });
 
         var result = await _service.Create(dto, CancellationToken.None);
 
         result.Should().NotBeNull();
+        result.Id.Should().Be("507f1f77bcf86cd799439011");
         result.Status.Should().Be(BookingStatus.QueueEnrolled);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         _mockRepository.Verify(x => x.CreateAsync(It.Is<Booking>(b =>
             b.Status == BookingStatus.QueueEnrolled), It.IsAny<CancellationToken>()), Times.Once);
+        _mockTaskQueue.Verify(x => x.EnqueueAsync(
+            It.IsAny<QrCodeTaskMessage>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

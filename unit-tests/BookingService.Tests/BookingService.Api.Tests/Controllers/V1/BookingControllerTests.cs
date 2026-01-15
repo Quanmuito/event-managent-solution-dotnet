@@ -1,6 +1,7 @@
 namespace BookingService.Api.Tests.Controllers.V1;
 
 using BookingService.Api.Controllers.V1;
+using BookingService.Api.Messages;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using BookingService.Data.Models;
@@ -8,6 +9,7 @@ using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
+using Ems.Common.Services.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +22,8 @@ public class BookingControllerTests
 {
     private readonly Mock<ILogger<BookingController>> _mockLogger;
     private readonly Mock<IBookingRepository> _mockRepository;
+    private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
+    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
     private readonly HandleBookingService _bookingService;
     private readonly BookingController _controller;
 
@@ -27,7 +31,9 @@ public class BookingControllerTests
     {
         _mockLogger = new Mock<ILogger<BookingController>>();
         _mockRepository = new Mock<IBookingRepository>();
-        _bookingService = new HandleBookingService(_mockRepository.Object);
+        _mockQrCodeRepository = new Mock<IQrCodeRepository>();
+        _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
+        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
         _controller = new BookingController(_mockLogger.Object, _bookingService);
     }
 
@@ -38,6 +44,8 @@ public class BookingControllerTests
         var bookingDto = new BookingDto(bookingEntity);
         _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(bookingEntity);
+        _mockQrCodeRepository.Setup(x => x.GetByBookingIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((QrCode?)null);
 
         var result = await _controller.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
 
