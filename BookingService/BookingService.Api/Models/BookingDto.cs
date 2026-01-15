@@ -12,4 +12,5 @@ public class BookingDto(Booking @booking)
     public string Phone { get; set; } = @booking.Phone;
     public DateTime CreatedAt { get; set; } = @booking.CreatedAt;
     public DateTime? UpdatedAt { get; set; } = @booking.UpdatedAt;
+    public byte[]? QrCodeData { get; set; }
 }

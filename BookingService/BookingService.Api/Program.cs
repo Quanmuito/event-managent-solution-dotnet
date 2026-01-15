@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Ems.Common.Extensions.Startup;
 using DatabaseService;
 using DatabaseService.Settings;
+using BookingService.Api.Messages;
 using BookingService.Api.Services;
 using BookingService.Data.Repositories;
 
@@ -47,7 +48,10 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
     services.AddEndpointsApiExplorer();
     services.AddSingleton<MongoDbContext>();
     services.AddScoped<IBookingRepository, BookingRepository>();
+    services.AddScoped<IQrCodeRepository, QrCodeRepository>();
     services.AddScoped<HandleBookingService>();
+
+    services.AddTaskService<QrCodeTaskMessage, QrCodeTaskProcessor>();
 
     services.AddHealthChecks();
 

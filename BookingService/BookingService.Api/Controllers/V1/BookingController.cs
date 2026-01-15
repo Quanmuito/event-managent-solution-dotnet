@@ -52,7 +52,7 @@ public class BookingController(ILogger<BookingController> logger, HandleBookingS
             var created = await bookingService.Create(createDto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, new BookingDto(created));
         }
-        catch (ArgumentException ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
             return BadRequest(new { message = ex.Message });
         }

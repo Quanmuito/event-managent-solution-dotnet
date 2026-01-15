@@ -1,5 +1,6 @@
 db.createCollection('Events');
 db.createCollection('Bookings');
+db.createCollection('QrCodes');
 
 // Test data
 db.Events.insertMany([

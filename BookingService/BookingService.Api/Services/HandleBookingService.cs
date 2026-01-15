@@ -1,17 +1,24 @@
 namespace BookingService.Api.Services;
 
 using MongoDB.Driver;
+using BookingService.Api.Messages;
 using BookingService.Api.Models;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
+using Ems.Common.Services.Tasks;
 
-public class HandleBookingService(IBookingRepository bookingRepository)
+public class HandleBookingService(IBookingRepository bookingRepository, IQrCodeRepository qrCodeRepository, ITaskQueue<QrCodeTaskMessage> taskQueue)
 {
     public async Task<BookingDto> GetById(string id, CancellationToken cancellationToken)
     {
         var bookingEntity = await bookingRepository.GetByIdAsync(id, cancellationToken);
-        return new BookingDto(bookingEntity!);
+        var qrCode = await qrCodeRepository.GetByBookingIdAsync(id, cancellationToken);
+        var bookingDto = new BookingDto(bookingEntity!)
+        {
+            QrCodeData = qrCode?.QrCodeData
+        };
+        return bookingDto;
     }
 
     public async Task<Booking> Create(CreateBookingDto createDto, CancellationToken cancellationToken)
@@ -25,7 +32,15 @@ public class HandleBookingService(IBookingRepository bookingRepository)
             Phone = createDto.Phone,
             CreatedAt = DateTime.UtcNow
         };
-        return await bookingRepository.CreateAsync(newBooking, cancellationToken);
+        var booking = await bookingRepository.CreateAsync(newBooking, cancellationToken);
+
+        if (booking.Id == null)
+            throw new InvalidOperationException("Failed to create booking.");
+
+        if (booking.Status == BookingStatus.Registered)
+            await taskQueue.EnqueueAsync(new QrCodeTaskMessage(booking.Id), cancellationToken);
+
+        return booking;
     }
 
     public async Task<Booking> Update(string id, UpdateBookingDto updateDto, CancellationToken cancellationToken)
@@ -44,10 +59,10 @@ public class HandleBookingService(IBookingRepository bookingRepository)
         if (updateDto.Phone != null)
             updates.Add(Builders<Booking>.Update.Set(b => b.Phone, updateDto.Phone));
 
-        updates.Add(Builders<Booking>.Update.Set(b => b.UpdatedAt, DateTime.UtcNow));
-
-        if (updates.Count == 1)
+        if (updates.Count == 0)
             throw new ArgumentException("No valid fields to update.");
+
+        updates.Add(Builders<Booking>.Update.Set(b => b.UpdatedAt, DateTime.UtcNow));
 
         var updateDef = Builders<Booking>.Update.Combine(updates);
 
