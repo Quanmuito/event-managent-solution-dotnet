@@ -1,9 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Diagnostics;
 using Ems.Common.Extensions.Startup;
+using Ems.Common.Services.Tasks.Messages;
 using DatabaseService;
 using DatabaseService.Settings;
-using BookingService.Api.Messages;
 using BookingService.Api.Services;
 using BookingService.Data.Repositories;
 
@@ -52,6 +52,7 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
     services.AddScoped<HandleBookingService>();
 
     services.AddTaskService<QrCodeTaskMessage, QrCodeTaskProcessor>();
+    services.AddTaskService<EmailNotificationTaskMessage, EmailNotificationTaskProcessor>();
 
     services.AddHealthChecks();
 

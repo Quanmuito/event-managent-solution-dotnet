@@ -1,6 +1,6 @@
 namespace BookingService.Api.Tests.Services.HandleQrCodeService;
 
-using BookingService.Api.Messages;
+using Ems.Common.Services.Tasks.Messages;
 using BookingService.Api.Services;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;

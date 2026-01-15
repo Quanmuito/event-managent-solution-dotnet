@@ -1,7 +1,7 @@
 namespace BookingService.Api.Tests.Controllers.V1;
 
 using BookingService.Api.Controllers.V1;
-using BookingService.Api.Messages;
+using Ems.Common.Services.Tasks.Messages;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using BookingService.Data.Models;
@@ -20,6 +20,7 @@ public class BookingControllerQrCodeTests
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
     private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
+    private readonly Mock<ITaskQueue<EmailNotificationTaskMessage>> _mockEmailTaskQueue;
     private readonly HandleBookingService _bookingService;
     private readonly BookingController _controller;
 
@@ -29,7 +30,8 @@ public class BookingControllerQrCodeTests
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
         _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
+        _mockEmailTaskQueue = new Mock<ITaskQueue<EmailNotificationTaskMessage>>();
+        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object, _mockEmailTaskQueue.Object);
         _controller = new BookingController(_mockLogger.Object, _bookingService);
     }
 
