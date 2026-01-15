@@ -228,7 +228,7 @@ Base path: `/v1/bookings`
 #### Get Booking by ID
 **GET** `/v1/bookings/{id}`
 
-Retrieve a specific booking by its ID.
+Retrieve a specific booking by its ID. Includes QR code data if available.
 
 **Path Parameters:**
 - `id` (string, required): Booking ID (MongoDB ObjectId format)
@@ -248,20 +248,41 @@ GET /v1/bookings/507f1f77bcf86cd799439011
 ```json
 {
   "id": "507f1f77bcf86cd799439011",
+  "eventId": "507f1f77bcf86cd799439012",
+  "status": "registered",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "1234567890",
   "createdAt": "2024-01-01T10:00:00Z",
-  "updatedAt": null
+  "updatedAt": null,
+  "qrCodeData": null
 }
 ```
+
+**Note:** `qrCodeData` is a byte array containing the QR code image data. It will be `null` if no QR code has been generated for the booking yet. QR codes are automatically generated for bookings with `registered` status.
 
 #### Create Booking
 **POST** `/v1/bookings`
 
-Create a new booking.
+Create a new booking. If status is `registered`, a QR code generation task will be queued automatically.
 
 **Request Body:**
 ```json
-{}
+{
+  "eventId": "string (required, MongoDB ObjectId format)",
+  "status": "string (required, 'registered' or 'queue_enrolled')",
+  "name": "string (required, 1-100 characters)",
+  "email": "string (required, valid email address)",
+  "phone": "string (required, max 20 characters)"
+}
 ```
+
+**Validation Rules:**
+- `eventId`: Required, must be a valid MongoDB ObjectId format
+- `status`: Required, must be either `registered` or `queue_enrolled`
+- `name`: Required, 1-100 characters
+- `email`: Required, must be a valid email address
+- `phone`: Required, maximum 20 characters
 
 **Response Codes:**
 - `201 Created`: Success - Returns created booking with location header
@@ -273,34 +294,60 @@ Create a new booking.
 POST /v1/bookings
 Content-Type: application/json
 
-{}
+{
+  "eventId": "507f1f77bcf86cd799439012",
+  "status": "registered",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "1234567890"
+}
 ```
 
 **Example Response:**
 ```json
 {
   "id": "507f1f77bcf86cd799439011",
+  "eventId": "507f1f77bcf86cd799439012",
+  "status": "registered",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "1234567890",
   "createdAt": "2024-01-01T10:00:00Z",
-  "updatedAt": null
+  "updatedAt": null,
+  "qrCodeData": null
 }
 ```
+
+**Note:** When a booking is created with `registered` status, a QR code generation task is automatically queued. The QR code will be available in subsequent GET requests once generation is complete.
 
 #### Update Booking
 **PATCH** `/v1/bookings/{id}`
 
-Update an existing booking.
+Update an existing booking. All fields are optional for partial updates.
 
 **Path Parameters:**
 - `id` (string, required): Booking ID (MongoDB ObjectId format)
 
 **Request Body:**
 ```json
-{}
+{
+  "status": "string (optional, 'registered', 'canceled', 'queue_enrolled', or 'queue_pending')",
+  "name": "string (optional, 1-100 characters)",
+  "email": "string (optional, valid email address)",
+  "phone": "string (optional, max 20 characters)"
+}
 ```
+
+**Validation Rules:**
+- At least one field must be provided
+- `status`: If provided, must be one of: `registered`, `canceled`, `queue_enrolled`, or `queue_pending`
+- `name`: If provided, 1-100 characters
+- `email`: If provided, must be a valid email address
+- `phone`: If provided, maximum 20 characters
 
 **Response Codes:**
 - `200 OK`: Success - Returns updated booking
-- `400 Bad Request`: Invalid request data, validation errors, or invalid ID format
+- `400 Bad Request`: Invalid request data, validation errors, invalid ID format, or no valid fields to update
 - `404 Not Found`: Booking not found
 - `500 Internal Server Error`: Server error
 
@@ -309,15 +356,58 @@ Update an existing booking.
 PATCH /v1/bookings/507f1f77bcf86cd799439011
 Content-Type: application/json
 
-{}
+{
+  "status": "canceled",
+  "name": "Jane Doe"
+}
 ```
 
 **Example Response:**
 ```json
 {
   "id": "507f1f77bcf86cd799439011",
+  "eventId": "507f1f77bcf86cd799439012",
+  "status": "canceled",
+  "name": "Jane Doe",
+  "email": "john.doe@example.com",
+  "phone": "1234567890",
   "createdAt": "2024-01-01T10:00:00Z",
-  "updatedAt": "2024-01-02T12:00:00Z"
+  "updatedAt": "2024-01-02T12:00:00Z",
+  "qrCodeData": null
+}
+```
+
+#### Cancel Booking
+**POST** `/v1/bookings/{id}/cancel`
+
+Cancel an existing booking. Only bookings with status `registered`, `queue_enrolled`, or `queue_pending` can be canceled.
+
+**Path Parameters:**
+- `id` (string, required): Booking ID (MongoDB ObjectId format)
+
+**Response Codes:**
+- `200 OK`: Success - Returns canceled booking
+- `400 Bad Request`: Invalid ID format, ID is null/empty, booking is already canceled, or booking status cannot be canceled
+- `404 Not Found`: Booking not found
+- `500 Internal Server Error`: Server error
+
+**Example Request:**
+```
+POST /v1/bookings/507f1f77bcf86cd799439011/cancel
+```
+
+**Example Response:**
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "eventId": "507f1f77bcf86cd799439012",
+  "status": "canceled",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "1234567890",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-02T12:00:00Z",
+  "qrCodeData": null
 }
 ```
 
@@ -339,3 +429,10 @@ Delete a booking by its ID.
 ```
 DELETE /v1/bookings/507f1f77bcf86cd799439011
 ```
+
+#### Booking Status Values
+The following status values are supported:
+- `registered`: Booking is confirmed and registered. QR code generation is automatically triggered.
+- `canceled`: Booking has been canceled.
+- `queue_enrolled`: Booking is enrolled in a waiting queue.
+- `queue_pending`: Booking is pending in the queue.
