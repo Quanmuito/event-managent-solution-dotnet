@@ -134,7 +134,7 @@ public class RepositoryTests
         var result = await _repository.UpdateAsync(entityId, updateDefinition, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result!.Title.Should().Be("Updated Title");
+        result.Title.Should().Be("Updated Title");
         _mockCollection.Verify(x => x.FindOneAndUpdateAsync(
             It.IsAny<FilterDefinition<TestEntity>>(),
             It.IsAny<UpdateDefinition<TestEntity>>(),

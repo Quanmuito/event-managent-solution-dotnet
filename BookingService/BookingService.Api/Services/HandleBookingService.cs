@@ -67,7 +67,7 @@ public class HandleBookingService(IBookingRepository bookingRepository, IQrCodeR
         var updateDef = Builders<Booking>.Update.Combine(updates);
 
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
-        return result!;
+        return result;
     }
 
     public async Task<Booking> Cancel(string id, CancellationToken cancellationToken)
@@ -89,7 +89,7 @@ public class HandleBookingService(IBookingRepository bookingRepository, IQrCodeR
             .Set(b => b.UpdatedAt, DateTime.UtcNow);
 
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
-        return result!;
+        return result;
     }
 
     public async Task<bool> Delete(string id, CancellationToken cancellationToken)

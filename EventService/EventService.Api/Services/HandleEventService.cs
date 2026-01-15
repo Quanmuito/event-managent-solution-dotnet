@@ -1,4 +1,4 @@
-﻿namespace EventService.Api.Services;
+namespace EventService.Api.Services;
 
 using MongoDB.Driver;
 using EventService.Api.Models;
@@ -64,7 +64,7 @@ public class HandleEventService(IEventRepository eventRepository)
         var updateDef = Builders<Event>.Update.Combine(updates);
 
         var result = await eventRepository.UpdateAsync(id, updateDef, cancellationToken);
-        return result!;
+        return result;
     }
 
     public async Task<bool> Delete(string id, CancellationToken cancellationToken)

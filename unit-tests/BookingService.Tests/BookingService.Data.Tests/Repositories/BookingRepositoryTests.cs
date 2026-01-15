@@ -120,7 +120,7 @@ public class BookingRepositoryTests
         var result = await _repository.UpdateAsync(bookingId, updateDefinition, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result!.Status.Should().Be(BookingStatus.Canceled);
+        result.Status.Should().Be(BookingStatus.Canceled);
         result.UpdatedAt.Should().NotBeNull();
     }
 
