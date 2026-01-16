@@ -6,14 +6,12 @@ using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using Ems.Common.Services.Tasks;
-using Ems.Common.Services.Tasks.Messages;
 using BookingService.Api.Messages;
 
 public class HandleBookingService(
     IBookingRepository bookingRepository,
     IQrCodeRepository qrCodeRepository,
-    ITaskQueue<QrCodeTaskMessage> taskQueue,
-    ITaskQueue<EmailNotificationTaskMessage> emailTaskQueue)
+    ITaskQueue<QrCodeTaskMessage> taskQueue)
 {
     public async Task<Booking> Create(CreateBookingDto createDto, CancellationToken cancellationToken)
     {
@@ -31,14 +29,8 @@ public class HandleBookingService(
         if (booking.Id == null)
             throw new InvalidOperationException("Failed to create booking.");
 
-        if (booking.Status == BookingStatus.QueueEnrolled)
-            await SendEmailNotificationAsync(booking, "QueueEnrolled", cancellationToken);
-
         if (booking.Status == BookingStatus.Registered)
-        {
             await taskQueue.EnqueueAsync(new QrCodeTaskMessage(booking.Id), cancellationToken);
-            await SendEmailNotificationAsync(booking, "Registered", cancellationToken);
-        }
 
         return booking;
     }
@@ -78,8 +70,6 @@ public class HandleBookingService(
         var updateDef = Builders<Booking>.Update.Combine(updates);
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
-        await SendEmailNotificationAsync(result, "Update", cancellationToken);
-
         return result;
     }
 
@@ -97,7 +87,6 @@ public class HandleBookingService(
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
         await taskQueue.EnqueueAsync(new QrCodeTaskMessage(result.Id!), cancellationToken);
-        await SendEmailNotificationAsync(result, "Registered", cancellationToken);
 
         return result;
     }
@@ -115,8 +104,6 @@ public class HandleBookingService(
 
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
-        await SendEmailNotificationAsync(result, "Cancel", cancellationToken);
-
         return result;
     }
 
@@ -125,40 +112,6 @@ public class HandleBookingService(
         var booking = await bookingRepository.GetByIdAsync(id, cancellationToken);
         var deleted = await bookingRepository.DeleteAsync(id, cancellationToken);
 
-        if (deleted)
-            await SendEmailNotificationAsync(booking, "Delete", cancellationToken);
-
         return deleted;
-    }
-
-    private async Task SendEmailNotificationAsync(Booking booking, string operation, CancellationToken cancellationToken)
-    {
-        var (action, timestampLabel, timestamp) = operation switch
-        {
-            "Registered" => ("confirmed", "Created At", booking.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")),
-            "QueueEnrolled" => ("put into queue", "Created At", booking.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")),
-            "Update" => ("updated", "Updated At", booking.UpdatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")),
-            "Cancel" => ("cancelled", "Cancelled At", booking.UpdatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")),
-            "Delete" => ("deleted", "Deleted At", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")),
-            _ => (operation.ToLower(), $"{operation} At", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"))
-        };
-
-        var subject = operation switch
-        {
-            "Create" => "Booking Confirmation",
-            "QueueEnrolled" => "Queue Enrollment Confirmation",
-            _ => $"Booking {operation}"
-        };
-
-        var commonDetails = $"Booking ID: {booking.Id}\nEvent ID: {booking.EventId}\nStatus: {booking.Status}";
-        var body = $"Dear {booking.Name},\n\nYour booking has been {action}.\n\n{commonDetails}\n{timestampLabel}: {timestamp} UTC";
-
-        await emailTaskQueue.EnqueueAsync(new EmailNotificationTaskMessage(
-            RecipientEmail: booking.Email,
-            Subject: subject,
-            Body: body,
-            ServiceType: "BookingService",
-            Metadata: new Dictionary<string, object> { { "BookingId", booking.Id! }, { "Operation", operation } }
-        ), cancellationToken);
     }
 }

@@ -10,7 +10,6 @@ using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
 using BookingService.Api.Messages;
 using Ems.Common.Services.Tasks;
-using Ems.Common.Services.Tasks.Messages;
 using TestUtilities.Helpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +24,6 @@ public class BookingControllerTests
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
     private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
-    private readonly Mock<ITaskQueue<EmailNotificationTaskMessage>> _mockEmailTaskQueue;
     private readonly HandleBookingService _bookingService;
     private readonly BookingController _controller;
 
@@ -35,8 +33,7 @@ public class BookingControllerTests
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
         _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _mockEmailTaskQueue = new Mock<ITaskQueue<EmailNotificationTaskMessage>>();
-        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object, _mockEmailTaskQueue.Object);
+        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
         _controller = new BookingController(_mockLogger.Object, _bookingService);
     }
 

@@ -8,7 +8,6 @@ using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
 using Ems.Common.Services.Tasks;
-using Ems.Common.Services.Tasks.Messages;
 using BookingService.Api.Messages;
 using FluentAssertions;
 using MongoDB.Driver;
@@ -20,7 +19,6 @@ public class HandleBookingServiceTests
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
     private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
-    private readonly Mock<ITaskQueue<EmailNotificationTaskMessage>> _mockEmailTaskQueue;
     private readonly HandleBookingService _service;
 
     public HandleBookingServiceTests()
@@ -28,8 +26,7 @@ public class HandleBookingServiceTests
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
         _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _mockEmailTaskQueue = new Mock<ITaskQueue<EmailNotificationTaskMessage>>();
-        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object, _mockEmailTaskQueue.Object);
+        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
     }
 
     [Fact]
