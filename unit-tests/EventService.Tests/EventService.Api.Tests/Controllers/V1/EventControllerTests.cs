@@ -1,14 +1,14 @@
 namespace EventService.Api.Tests.Controllers.V1;
 
+using DatabaseService.Exceptions;
 using EventService.Api.Controllers.V1;
 using EventService.Api.Models;
 using EventService.Api.Services;
 using EventService.Data.Models;
 using EventService.Data.Repositories;
-using DatabaseService.Exceptions;
 using EventService.Tests.Helpers;
+using TestUtilities.Helpers;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -77,7 +77,7 @@ public class EventControllerTests
 
         var result = await _controller.Search("test", CancellationToken.None);
 
-        AssertInternalServerError(result);
+        ControllerTestHelper.AssertInternalServerError(result);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class EventControllerTests
 
         var result = await _controller.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
 
-        AssertInternalServerError(result);
+        ControllerTestHelper.AssertInternalServerError(result);
     }
 
     [Fact]
@@ -192,7 +192,7 @@ public class EventControllerTests
 
         var result = await _controller.Create(createDto, CancellationToken.None);
 
-        AssertInternalServerError(result);
+        ControllerTestHelper.AssertInternalServerError(result);
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class EventControllerTests
 
         var result = await _controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
-        AssertInternalServerError(result);
+        ControllerTestHelper.AssertInternalServerError(result);
     }
 
     [Fact]
@@ -329,13 +329,6 @@ public class EventControllerTests
 
         var result = await _controller.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
-        AssertInternalServerError(result);
-    }
-
-    private static void AssertInternalServerError(IActionResult result)
-    {
-        result.Should().BeOfType<ObjectResult>();
-        var objectResult = result as ObjectResult;
-        objectResult!.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        ControllerTestHelper.AssertInternalServerError(result);
     }
 }

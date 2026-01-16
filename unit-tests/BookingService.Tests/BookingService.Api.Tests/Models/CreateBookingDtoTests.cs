@@ -1,9 +1,9 @@
 namespace BookingService.Api.Tests.Models;
 
 using BookingService.Api.Models;
-using BookingService.Api.Tests.Helpers;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
+using TestUtilities.Helpers;
 using FluentAssertions;
 using Xunit;
 

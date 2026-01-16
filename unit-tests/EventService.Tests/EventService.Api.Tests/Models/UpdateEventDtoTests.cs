@@ -1,8 +1,8 @@
 namespace EventService.Api.Tests.Models;
 
 using EventService.Api.Models;
-using EventService.Api.Tests.Helpers;
 using EventService.Tests.Helpers;
+using TestUtilities.Helpers;
 using FluentAssertions;
 using Xunit;
 

@@ -1,15 +1,13 @@
 namespace BookingService.Data.Tests.Repositories;
 
-using DatabaseService;
-using DatabaseService.Exceptions;
-using DatabaseService.Settings;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
+using DatabaseService;
+using DatabaseService.Exceptions;
 using TestUtilities.Helpers;
 using FluentAssertions;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Moq;
 using Xunit;
@@ -22,13 +20,7 @@ public class BookingRepositoryTests
 
     public BookingRepositoryTests()
     {
-        var mockOptions = new Mock<IOptions<MongoDbSettings>>();
-        mockOptions.Setup(x => x.Value).Returns(new MongoDbSettings
-        {
-            ConnectionString = "mongodb://localhost:27017",
-            DatabaseName = "test-db"
-        });
-        _mockMongoDbContext = new Mock<MongoDbContext>(mockOptions.Object) { CallBase = true };
+        (_mockMongoDbContext, _) = MongoDbContextTestHelper.SetupMongoDbContext();
         _mockCollection = new Mock<IMongoCollection<Booking>>(MockBehavior.Loose);
         _mockMongoDbContext.Setup(x => x.GetCollection<Booking>("Bookings")).Returns(_mockCollection.Object);
         _repository = new BookingRepository(_mockMongoDbContext.Object);

@@ -1,13 +1,11 @@
 namespace EventService.Data.Tests.Repositories;
 
 using DatabaseService;
-using DatabaseService.Settings;
 using EventService.Data.Models;
 using EventService.Data.Repositories;
-using TestUtilities.Helpers;
 using EventService.Tests.Helpers;
+using TestUtilities.Helpers;
 using FluentAssertions;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Moq;
 using Xunit;
@@ -20,13 +18,7 @@ public class EventRepositoryTests
 
     public EventRepositoryTests()
     {
-        var mockOptions = new Mock<IOptions<MongoDbSettings>>();
-        mockOptions.Setup(x => x.Value).Returns(new MongoDbSettings
-        {
-            ConnectionString = "mongodb://localhost:27017",
-            DatabaseName = "test-db"
-        });
-        _mockMongoDbContext = new Mock<MongoDbContext>(mockOptions.Object) { CallBase = true };
+        (_mockMongoDbContext, _) = MongoDbContextTestHelper.SetupMongoDbContext();
         _mockCollection = new Mock<IMongoCollection<Event>>(MockBehavior.Loose);
         _mockMongoDbContext.Setup(x => x.GetCollection<Event>("Events")).Returns(_mockCollection.Object);
         _repository = new EventRepository(_mockMongoDbContext.Object);

@@ -1,4 +1,4 @@
-namespace EventService.Api.Tests.Helpers;
+namespace TestUtilities.Helpers;
 
 using System.ComponentModel.DataAnnotations;
 

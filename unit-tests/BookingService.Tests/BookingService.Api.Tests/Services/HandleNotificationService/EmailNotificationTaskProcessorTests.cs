@@ -1,7 +1,7 @@
 namespace BookingService.Api.Tests.Services.HandleNotificationService;
 
-using Ems.Common.Services.Tasks.Messages;
 using BookingService.Api.Services;
+using Ems.Common.Services.Tasks.Messages;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -88,7 +88,7 @@ public class EmailNotificationTaskProcessorTests
             Subject: "Test Subject",
             Body: "Test Body",
             ServiceType: "BookingService",
-            Metadata: new Dictionary<string, object>()
+            Metadata: []
         );
 
         var act = async () => await _processor.ProcessAsync(message, CancellationToken.None);

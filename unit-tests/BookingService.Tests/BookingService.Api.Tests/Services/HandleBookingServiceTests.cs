@@ -1,6 +1,5 @@
 namespace BookingService.Api.Tests.Services;
 
-using Ems.Common.Services.Tasks.Messages;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using BookingService.Data.Models;
@@ -9,6 +8,7 @@ using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
 using Ems.Common.Services.Tasks;
+using Ems.Common.Services.Tasks.Messages;
 using FluentAssertions;
 using MongoDB.Driver;
 using Moq;

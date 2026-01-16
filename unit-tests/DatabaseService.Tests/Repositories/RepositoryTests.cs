@@ -3,12 +3,10 @@ namespace DatabaseService.Tests.Repositories;
 using DatabaseService;
 using DatabaseService.Exceptions;
 using DatabaseService.Repositories;
-using DatabaseService.Settings;
 using DatabaseService.Tests.Helpers;
 using DatabaseService.Tests.Models;
 using TestUtilities.Helpers;
 using FluentAssertions;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Moq;
 using Xunit;
@@ -21,13 +19,7 @@ public class RepositoryTests
 
     public RepositoryTests()
     {
-        var mockOptions = new Mock<IOptions<MongoDbSettings>>();
-        mockOptions.Setup(x => x.Value).Returns(new MongoDbSettings
-        {
-            ConnectionString = "mongodb://localhost:27017",
-            DatabaseName = "test-db"
-        });
-        _mockMongoDbContext = new Mock<MongoDbContext>(mockOptions.Object) { CallBase = true };
+        (_mockMongoDbContext, _) = MongoDbContextTestHelper.SetupMongoDbContext();
         _mockCollection = new Mock<IMongoCollection<TestEntity>>(MockBehavior.Loose);
         _mockMongoDbContext.Setup(x => x.GetCollection<TestEntity>("TestCollection")).Returns(_mockCollection.Object);
         _repository = new Repository<TestEntity>(_mockMongoDbContext.Object, "TestCollection");
