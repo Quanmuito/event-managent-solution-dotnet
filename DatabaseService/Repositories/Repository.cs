@@ -8,7 +8,7 @@ public class Repository<T>(MongoDbContext mongoDbContext, string collectionName)
 {
     protected readonly IMongoCollection<T> Collection = mongoDbContext.GetCollection<T>(collectionName);
 
-    public async Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken)
+    public async Task<T> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         var objectId = GetValidObjectId(id);
         var filter = Builders<T>.Filter.Eq("_id", objectId);

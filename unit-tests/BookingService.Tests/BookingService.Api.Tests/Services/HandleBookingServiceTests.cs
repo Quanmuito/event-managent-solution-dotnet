@@ -128,6 +128,23 @@ public class HandleBookingServiceTests
     }
 
     [Fact]
+    public async Task Create_WhenBookingIdIsNull_ShouldThrowInvalidOperationException()
+    {
+        var dto = TestDataBuilder.CreateValidCreateBookingDto();
+        _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Booking b, CancellationToken ct) =>
+            {
+                b.Id = null;
+                return b;
+            });
+
+        var act = async () => await _service.Create(dto, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Failed to create booking.");
+    }
+
+    [Fact]
     public async Task Update_WithValidDto_ShouldUpdateAndReturnBooking()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateBookingDto();
@@ -209,30 +226,35 @@ public class HandleBookingServiceTests
     [Fact]
     public async Task Delete_WithValidId_ShouldDeleteAndReturnTrue()
     {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
+        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
         _mockRepository.Setup(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await _service.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
         result.Should().BeTrue();
+        _mockRepository.Verify(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Delete_WithNonExistentId_ShouldReturnFalse()
+    public async Task Delete_WithNonExistentId_ShouldThrowNotFoundException()
     {
-        _mockRepository.Setup(x => x.DeleteAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
 
-        var result = await _service.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
+        var act = async () => await _service.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
 
-        result.Should().BeFalse();
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Bookings with ID '507f1f77bcf86cd799439999' was not found.");
     }
 
     [Fact]
     public async Task Delete_WithInvalidFormatId_ShouldThrowFormatException()
     {
-        _mockRepository.Setup(x => x.DeleteAsync("invalid-id", It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.GetByIdAsync("invalid-id", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
         var act = async () => await _service.Delete("invalid-id", CancellationToken.None);

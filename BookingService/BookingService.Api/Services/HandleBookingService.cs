@@ -18,7 +18,7 @@ public class HandleBookingService(
     {
         var bookingEntity = await bookingRepository.GetByIdAsync(id, cancellationToken);
         var qrCode = await qrCodeRepository.GetByBookingIdAsync(id, cancellationToken);
-        var bookingDto = new BookingDto(bookingEntity!)
+        var bookingDto = new BookingDto(bookingEntity)
         {
             QrCodeData = qrCode?.QrCodeData
         };
@@ -41,10 +41,14 @@ public class HandleBookingService(
         if (booking.Id == null)
             throw new InvalidOperationException("Failed to create booking.");
 
-        if (booking.Status == BookingStatus.Registered)
-            await taskQueue.EnqueueAsync(new QrCodeTaskMessage(booking.Id), cancellationToken);
+        if (booking.Status == BookingStatus.QueueEnrolled)
+            await SendEmailNotificationAsync(booking, "QueueEnrolled", cancellationToken);
 
-        await SendEmailNotificationAsync(booking, "Create", cancellationToken);
+        if (booking.Status == BookingStatus.Registered)
+        {
+            await taskQueue.EnqueueAsync(new QrCodeTaskMessage(booking.Id), cancellationToken);
+            await SendEmailNotificationAsync(booking, "Registered", cancellationToken);
+        }
 
         return booking;
     }
@@ -71,10 +75,9 @@ public class HandleBookingService(
         updates.Add(Builders<Booking>.Update.Set(b => b.UpdatedAt, DateTime.UtcNow));
 
         var updateDef = Builders<Booking>.Update.Combine(updates);
-
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
-        await SendEmailNotificationAsync(result!, "Update", cancellationToken);
+        await SendEmailNotificationAsync(result, "Update", cancellationToken);
 
         return result;
     }
@@ -83,15 +86,8 @@ public class HandleBookingService(
     {
         var booking = await bookingRepository.GetByIdAsync(id, cancellationToken);
 
-        if (booking!.Status == BookingStatus.Canceled)
+        if (booking.Status == BookingStatus.Canceled)
             throw new InvalidOperationException("Booking is already canceled.");
-
-        if (!BookingStatus.AllowedStatusesForCancellation.Contains(booking.Status))
-        {
-            throw new InvalidOperationException(
-                $"Cannot cancel booking with status '{booking.Status}'. " +
-                $"Only bookings with statuses: {string.Join(", ", BookingStatus.AllowedStatusesForCancellation)} can be canceled.");
-        }
 
         var updateDef = Builders<Booking>.Update
             .Set(b => b.Status, BookingStatus.Canceled)
@@ -99,7 +95,7 @@ public class HandleBookingService(
 
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
-        await SendEmailNotificationAsync(result!, "Cancel", cancellationToken);
+        await SendEmailNotificationAsync(result, "Cancel", cancellationToken);
 
         return result;
     }
@@ -109,7 +105,7 @@ public class HandleBookingService(
         var booking = await bookingRepository.GetByIdAsync(id, cancellationToken);
         var deleted = await bookingRepository.DeleteAsync(id, cancellationToken);
 
-        if (deleted && booking != null)
+        if (deleted)
             await SendEmailNotificationAsync(booking, "Delete", cancellationToken);
 
         return deleted;
@@ -119,7 +115,8 @@ public class HandleBookingService(
     {
         var (action, timestampLabel, timestamp) = operation switch
         {
-            "Create" => ("confirmed", "Created At", booking.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")),
+            "Registered" => ("confirmed", "Created At", booking.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")),
+            "QueueEnrolled" => ("put into queue", "Created At", booking.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")),
             "Update" => ("updated", "Updated At", booking.UpdatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")),
             "Cancel" => ("cancelled", "Cancelled At", booking.UpdatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")),
             "Delete" => ("deleted", "Deleted At", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")),
@@ -129,6 +126,7 @@ public class HandleBookingService(
         var subject = operation switch
         {
             "Create" => "Booking Confirmation",
+            "QueueEnrolled" => "Queue Enrollment Confirmation",
             _ => $"Booking {operation}"
         };
 

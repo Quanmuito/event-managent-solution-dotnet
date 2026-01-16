@@ -421,6 +421,9 @@ public class BookingControllerTests
     [Fact]
     public async Task Delete_WithValidId_ShouldReturnNoContent()
     {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
+        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
         _mockRepository.Setup(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -440,8 +443,8 @@ public class BookingControllerTests
     [Fact]
     public async Task Delete_WithNonExistentId_ShouldReturnNotFound()
     {
-        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
 
         var result = await _controller.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
 
@@ -451,7 +454,7 @@ public class BookingControllerTests
     [Fact]
     public async Task Delete_WithInvalidFormatId_ShouldReturnBadRequest()
     {
-        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
         var result = await _controller.Delete("invalid-id", CancellationToken.None);
@@ -462,7 +465,7 @@ public class BookingControllerTests
     [Fact]
     public async Task Delete_WithException_ShouldReturn500()
     {
-        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var result = await _controller.Delete("507f1f77bcf86cd799439011", CancellationToken.None);

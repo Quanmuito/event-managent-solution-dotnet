@@ -16,7 +16,7 @@ public class HandleEventService(IEventRepository eventRepository)
     public async Task<EventDto> GetById(string id, CancellationToken cancellationToken)
     {
         var eventEntity = await eventRepository.GetByIdAsync(id, cancellationToken);
-        return new EventDto(eventEntity!);
+        return new EventDto(eventEntity);
     }
 
     public async Task<Event> Create(CreateEventDto createDto, CancellationToken cancellationToken)

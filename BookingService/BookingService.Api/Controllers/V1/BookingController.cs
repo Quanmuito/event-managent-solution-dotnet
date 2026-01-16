@@ -137,6 +137,10 @@ public class BookingController(ILogger<BookingController> logger, HandleBookingS
             var deleted = await bookingService.Delete(id, cancellationToken);
             return deleted ? NoContent() : NotFound(new { message = $"Booking with ID '{id}' was not found." });
         }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
         catch (FormatException ex)
         {
             return BadRequest(new { message = ex.Message });

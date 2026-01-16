@@ -11,7 +11,7 @@ public static class LoggingExtension
         {
             configuration
                 .WriteTo.Console();
-            
+
             var isDev = context.HostingEnvironment.IsDevelopment();
             if (isDev)
             {
