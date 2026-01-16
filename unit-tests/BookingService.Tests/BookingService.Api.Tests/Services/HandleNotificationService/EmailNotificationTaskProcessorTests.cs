@@ -2,6 +2,7 @@ namespace BookingService.Api.Tests.Services.HandleNotificationService;
 
 using BookingService.Api.Services;
 using Ems.Common.Services.Tasks.Messages;
+using BookingService.Api.Messages;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;

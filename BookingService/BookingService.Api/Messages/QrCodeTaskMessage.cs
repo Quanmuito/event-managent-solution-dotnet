@@ -1,3 +1,3 @@
-namespace Ems.Common.Services.Tasks.Messages;
+namespace BookingService.Api.Messages;
 
 public record QrCodeTaskMessage(string BookingId);

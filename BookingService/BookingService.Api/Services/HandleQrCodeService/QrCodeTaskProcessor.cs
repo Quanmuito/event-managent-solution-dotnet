@@ -3,7 +3,7 @@ namespace BookingService.Api.Services;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using Ems.Common.Services.Tasks;
-using Ems.Common.Services.Tasks.Messages;
+using BookingService.Api.Messages;
 using QRCoder;
 
 public class QrCodeTaskProcessor(IQrCodeRepository qrCodeRepository, ILogger<QrCodeTaskProcessor> logger) : ITaskProcessor<QrCodeTaskMessage>

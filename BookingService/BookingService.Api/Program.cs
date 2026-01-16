@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Diagnostics;
 using Ems.Common.Extensions.Startup;
 using Ems.Common.Services.Tasks.Messages;
+using BookingService.Api.Messages;
 using DatabaseService;
 using DatabaseService.Settings;
 using BookingService.Api.Services;

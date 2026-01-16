@@ -7,6 +7,7 @@ using BookingService.Data.Repositories;
 using BookingService.Tests.Helpers;
 using Ems.Common.Services.Tasks;
 using Ems.Common.Services.Tasks.Messages;
+using BookingService.Api.Messages;
 using FluentAssertions;
 using Moq;
 using Xunit;

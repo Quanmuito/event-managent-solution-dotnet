@@ -7,6 +7,7 @@ using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using Ems.Common.Services.Tasks;
 using Ems.Common.Services.Tasks.Messages;
+using BookingService.Api.Messages;
 
 public class HandleBookingService(
     IBookingRepository bookingRepository,

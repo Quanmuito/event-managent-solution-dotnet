@@ -9,6 +9,7 @@ using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
 using Ems.Common.Services.Tasks;
 using Ems.Common.Services.Tasks.Messages;
+using BookingService.Api.Messages;
 using FluentAssertions;
 using MongoDB.Driver;
 using Moq;
