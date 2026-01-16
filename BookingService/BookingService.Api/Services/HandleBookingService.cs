@@ -14,17 +14,6 @@ public class HandleBookingService(
     ITaskQueue<QrCodeTaskMessage> taskQueue,
     ITaskQueue<EmailNotificationTaskMessage> emailTaskQueue)
 {
-    public async Task<BookingDto> GetById(string id, CancellationToken cancellationToken)
-    {
-        var bookingEntity = await bookingRepository.GetByIdAsync(id, cancellationToken);
-        var qrCode = await qrCodeRepository.GetByBookingIdAsync(id, cancellationToken);
-        var bookingDto = new BookingDto(bookingEntity)
-        {
-            QrCodeData = qrCode?.QrCodeData
-        };
-        return bookingDto;
-    }
-
     public async Task<Booking> Create(CreateBookingDto createDto, CancellationToken cancellationToken)
     {
         var newBooking = new Booking
@@ -53,6 +42,17 @@ public class HandleBookingService(
         return booking;
     }
 
+    public async Task<BookingDto> GetById(string id, CancellationToken cancellationToken)
+    {
+        var bookingEntity = await bookingRepository.GetByIdAsync(id, cancellationToken);
+        var qrCode = await qrCodeRepository.GetByBookingIdAsync(id, cancellationToken);
+        var bookingDto = new BookingDto(bookingEntity)
+        {
+            QrCodeData = qrCode?.QrCodeData
+        };
+        return bookingDto;
+    }
+
     public async Task<Booking> Update(string id, UpdateBookingDto updateDto, CancellationToken cancellationToken)
     {
         var updates = new List<UpdateDefinition<Booking>>();
@@ -78,6 +78,25 @@ public class HandleBookingService(
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
         await SendEmailNotificationAsync(result, "Update", cancellationToken);
+
+        return result;
+    }
+
+    public async Task<Booking> Confirm(string id, CancellationToken cancellationToken)
+    {
+        var booking = await bookingRepository.GetByIdAsync(id, cancellationToken);
+
+        if (booking.Status != BookingStatus.QueuePending)
+            throw new InvalidOperationException("Only bookings with QueuePending status can be confirmed.");
+
+        var updateDef = Builders<Booking>.Update
+            .Set(b => b.Status, BookingStatus.Registered)
+            .Set(b => b.UpdatedAt, DateTime.UtcNow);
+
+        var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
+
+        await taskQueue.EnqueueAsync(new QrCodeTaskMessage(result.Id!), cancellationToken);
+        await SendEmailNotificationAsync(result, "Registered", cancellationToken);
 
         return result;
     }

@@ -11,13 +11,33 @@ using Models;
 [Route("/v{version:apiVersion}/bookings")]
 public class BookingController(ILogger<BookingController> logger, HandleBookingService bookingService) : ControllerBase
 {
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateBookingDto createDto, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = "Invalid request data.", errors = ModelState });
+
+        try
+        {
+            var created = await bookingService.Create(createDto, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, new BookingDto(created));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while creating booking");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the request." });
+        }
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
-        {
             return BadRequest(new { message = "Booking ID is required." });
-        }
 
         try
         {
@@ -39,42 +59,14 @@ public class BookingController(ILogger<BookingController> logger, HandleBookingS
         }
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateBookingDto createDto, CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(new { message = "Invalid request data.", errors = ModelState });
-        }
-
-        try
-        {
-            var created = await bookingService.Create(createDto, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, new BookingDto(created));
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "An error occurred while creating booking");
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the request." });
-        }
-    }
-
     [HttpPatch("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] UpdateBookingDto updateDto, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
-        {
             return BadRequest(new { message = "Booking ID is required." });
-        }
 
         if (!ModelState.IsValid)
-        {
             return BadRequest(new { message = "Invalid request data.", errors = ModelState });
-        }
 
         try
         {
@@ -96,13 +88,37 @@ public class BookingController(ILogger<BookingController> logger, HandleBookingS
         }
     }
 
+    [HttpPost("{id}/confirm")]
+    public async Task<IActionResult> Confirm(string id, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest(new { message = "Booking ID is required." });
+
+        try
+        {
+            var confirmed = await bookingService.Confirm(id, cancellationToken);
+            return Ok(new BookingDto(confirmed));
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FormatException)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while confirming booking with ID: {BookingId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing the confirmation request." });
+        }
+    }
+
     [HttpPost("{id}/cancel")]
     public async Task<IActionResult> Cancel(string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
-        {
             return BadRequest(new { message = "Booking ID is required." });
-        }
 
         try
         {
@@ -128,9 +144,7 @@ public class BookingController(ILogger<BookingController> logger, HandleBookingS
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
-        {
             return BadRequest(new { message = "Booking ID is required." });
-        }
 
         try
         {
