@@ -2,21 +2,35 @@ namespace BookingService.Api.Services;
 
 using MongoDB.Driver;
 using BookingService.Api.Models;
-using BookingService.Api.Utils;
 using BookingService.Api.Messages;
+using BookingService.Api.Utils;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
+using EventService.Data.Repositories;
+using DatabaseService.Exceptions;
+using Ems.Common.Messages;
 using Ems.Common.Services.Tasks;
 
 public class HandleBookingService(
     IBookingRepository bookingRepository,
     IQrCodeRepository qrCodeRepository,
+    IEventRepository eventRepository,
     ITaskQueue<QrCodeTaskMessage> qrCodeTaskQueue,
-    ITaskQueue<NotificationTaskMessage> notificationTaskQueue)
+    ITaskQueue<EmailNotificationTaskMessage<BookingDto>> emailNotificationTaskQueue,
+    ITaskQueue<PhoneNotificationTaskMessage<BookingDto>> phoneNotificationTaskQueue)
 {
     public async Task<Booking> Create(CreateBookingDto createDto, CancellationToken cancellationToken)
     {
+        try
+        {
+            await eventRepository.GetByIdAsync(createDto.EventId, cancellationToken);
+        }
+        catch (NotFoundException)
+        {
+            throw new NotFoundException("Events", createDto.EventId);
+        }
+
         var newBooking = new Booking
         {
             EventId = createDto.EventId,
@@ -130,8 +144,14 @@ public class HandleBookingService(
 
     private async Task EnqueueNotificationAsync(Booking booking, string operation, CancellationToken cancellationToken)
     {
-        await notificationTaskQueue.EnqueueAsync(
-            new NotificationTaskMessage(new BookingDto(booking), operation),
+        var bookingDto = new BookingDto(booking);
+
+        await emailNotificationTaskQueue.EnqueueAsync(
+            new EmailNotificationTaskMessage<BookingDto>(bookingDto, operation),
+            cancellationToken);
+
+        await phoneNotificationTaskQueue.EnqueueAsync(
+            new PhoneNotificationTaskMessage<BookingDto>(bookingDto, operation),
             cancellationToken);
     }
 }

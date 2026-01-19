@@ -8,7 +8,10 @@ using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
+using Ems.Common.Messages;
 using Ems.Common.Services.Tasks;
+using EventService.Data.Models;
+using EventService.Data.Repositories;
 using FluentAssertions;
 using MongoDB.Driver;
 using Moq;
@@ -18,17 +21,27 @@ public class HandleBookingServiceTests
 {
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
+    private readonly Mock<IEventRepository> _mockEventRepository;
     private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockQrCodeTaskQueue;
-    private readonly Mock<ITaskQueue<NotificationTaskMessage>> _mockNotificationTaskQueue;
+    private readonly Mock<ITaskQueue<EmailNotificationTaskMessage<BookingDto>>> _mockEmailNotificationTaskQueue;
+    private readonly Mock<ITaskQueue<PhoneNotificationTaskMessage<BookingDto>>> _mockPhoneNotificationTaskQueue;
     private readonly HandleBookingService _service;
 
     public HandleBookingServiceTests()
     {
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
+        _mockEventRepository = new Mock<IEventRepository>();
         _mockQrCodeTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _mockNotificationTaskQueue = new Mock<ITaskQueue<NotificationTaskMessage>>();
-        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockQrCodeTaskQueue.Object, _mockNotificationTaskQueue.Object);
+        _mockEmailNotificationTaskQueue = new Mock<ITaskQueue<EmailNotificationTaskMessage<BookingDto>>>();
+        _mockPhoneNotificationTaskQueue = new Mock<ITaskQueue<PhoneNotificationTaskMessage<BookingDto>>>();
+        _service = new HandleBookingService(
+            _mockRepository.Object,
+            _mockQrCodeRepository.Object,
+            _mockEventRepository.Object,
+            _mockQrCodeTaskQueue.Object,
+            _mockEmailNotificationTaskQueue.Object,
+            _mockPhoneNotificationTaskQueue.Object);
     }
 
     [Fact]
@@ -79,6 +92,8 @@ public class HandleBookingServiceTests
         var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
         createdBooking.Status = dto.Status;
 
+        _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EventService.Data.Models.Event { Id = dto.EventId });
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -107,6 +122,8 @@ public class HandleBookingServiceTests
         var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
         createdBooking.Status = dto.Status;
 
+        _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EventService.Data.Models.Event { Id = dto.EventId });
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -128,9 +145,24 @@ public class HandleBookingServiceTests
     }
 
     [Fact]
+    public async Task Create_WhenEventDoesNotExist_ShouldThrowNotFoundException()
+    {
+        var dto = TestDataBuilder.CreateValidCreateBookingDto();
+        _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new NotFoundException("Events", dto.EventId));
+
+        var act = async () => await _service.Create(dto, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage($"Events with ID '{dto.EventId}' was not found.");
+    }
+
+    [Fact]
     public async Task Create_WhenBookingIdIsNull_ShouldThrowInvalidOperationException()
     {
         var dto = TestDataBuilder.CreateValidCreateBookingDto();
+        _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EventService.Data.Models.Event { Id = dto.EventId });
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {

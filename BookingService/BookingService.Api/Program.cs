@@ -1,10 +1,13 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Diagnostics;
 using Ems.Common.Extensions.Startup;
-using BookingService.Api.Messages;
+using Ems.Common.Messages;
+using Ems.Common.Services.Notification;
 using DatabaseService;
 using DatabaseService.Settings;
 using BookingService.Api.Services;
+using BookingService.Api.Messages;
+using BookingService.Api.Models;
 using BookingService.Data.Repositories;
 using EventService.Data.Repositories;
 
@@ -53,8 +56,12 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
     services.AddScoped<IEventRepository, EventRepository>();
     services.AddScoped<HandleBookingService>();
 
+    services.AddSingleton<IEmailService, EmailService>();
+    services.AddSingleton<IPhoneService, PhoneService>();
+
     services.AddTaskService<QrCodeTaskMessage, QrCodeTaskProcessor>();
-    services.AddTaskService<NotificationTaskMessage, NotificationTaskProcessor>();
+    services.AddTaskService<EmailNotificationTaskMessage<BookingDto>, BookingEmailNotificationTaskProcessor>();
+    services.AddTaskService<PhoneNotificationTaskMessage<BookingDto>, BookingPhoneNotificationTaskProcessor>();
 
     services.AddHealthChecks();
 

@@ -7,7 +7,9 @@ using BookingService.Api.Messages;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Tests.Helpers;
+using Ems.Common.Messages;
 using Ems.Common.Services.Tasks;
+using EventService.Data.Repositories;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -19,8 +21,10 @@ public class BookingControllerQrCodeTests
     private readonly Mock<ILogger<BookingController>> _mockLogger;
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
+    private readonly Mock<IEventRepository> _mockEventRepository;
     private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockQrCodeTaskQueue;
-    private readonly Mock<ITaskQueue<NotificationTaskMessage>> _mockNotificationTaskQueue;
+    private readonly Mock<ITaskQueue<EmailNotificationTaskMessage<BookingDto>>> _mockEmailNotificationTaskQueue;
+    private readonly Mock<ITaskQueue<PhoneNotificationTaskMessage<BookingDto>>> _mockPhoneNotificationTaskQueue;
     private readonly HandleBookingService _bookingService;
     private readonly BookingController _controller;
 
@@ -29,9 +33,17 @@ public class BookingControllerQrCodeTests
         _mockLogger = new Mock<ILogger<BookingController>>();
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
+        _mockEventRepository = new Mock<IEventRepository>();
         _mockQrCodeTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _mockNotificationTaskQueue = new Mock<ITaskQueue<NotificationTaskMessage>>();
-        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockQrCodeTaskQueue.Object, _mockNotificationTaskQueue.Object);
+        _mockEmailNotificationTaskQueue = new Mock<ITaskQueue<EmailNotificationTaskMessage<BookingDto>>>();
+        _mockPhoneNotificationTaskQueue = new Mock<ITaskQueue<PhoneNotificationTaskMessage<BookingDto>>>();
+        _bookingService = new HandleBookingService(
+            _mockRepository.Object,
+            _mockQrCodeRepository.Object,
+            _mockEventRepository.Object,
+            _mockQrCodeTaskQueue.Object,
+            _mockEmailNotificationTaskQueue.Object,
+            _mockPhoneNotificationTaskQueue.Object);
         _controller = new BookingController(_mockLogger.Object, _bookingService);
     }
 

@@ -1,28 +1,24 @@
 namespace BookingService.Api.Services;
 
-using BookingService.Api.Messages;
 using BookingService.Api.Models;
 using BookingService.Api.Utils;
 using EventService.Data.Repositories;
+using Ems.Common.Services.Notification;
 using Ems.Common.Services.Tasks;
+using Microsoft.Extensions.Logging;
 
-public class NotificationTaskProcessor(
+public class BookingEmailNotificationTaskProcessor(
+    IEmailService emailService,
     IEventRepository eventRepository,
-    ILogger<NotificationTaskProcessor> logger
-) : ITaskProcessor<NotificationTaskMessage>
+    ILogger<BookingEmailNotificationTaskProcessor> logger
+) : EmailNotificationTaskProcessor<BookingDto>(emailService, logger)
 {
-    public async Task ProcessAsync(NotificationTaskMessage message, CancellationToken cancellationToken)
+    protected override string GetRecipient(BookingDto data)
     {
-        logger.LogInformation("Processing notification for BookingId: {BookingId}, Operation: {Operation}", message.Booking.Id, message.Operation);
-
-        var subject = GetEmailSubject(message.Operation);
-        var content = await ComposeEmailContent(message.Booking, message.Operation, cancellationToken);
-
-        logger.LogInformation("Email Subject: {Subject}", subject);
-        logger.LogInformation("Email Content:\n{Content}", content);
+        return data.Email;
     }
 
-    private static string GetEmailSubject(string operation)
+    protected override string GetSubject(string operation)
     {
         return operation switch
         {
@@ -31,7 +27,7 @@ public class NotificationTaskProcessor(
         };
     }
 
-    private async Task<string> ComposeEmailContent(BookingDto booking, string operation, CancellationToken cancellationToken)
+    protected override async Task<string> ComposeContentAsync(BookingDto booking, string operation, CancellationToken cancellationToken)
     {
         var content = $"Dear {booking.Name},\n\n";
 
@@ -69,5 +65,11 @@ public class NotificationTaskProcessor(
         content += "\nBest regards.\n";
 
         return content;
+    }
+
+    protected override Task HandleBusinessLogicAsync(BookingDto booking, string operation, CancellationToken cancellationToken)
+    {
+        logger.LogInformation("Handling business logic for email notification: BookingId={BookingId}, Operation={Operation}", booking.Id, operation);
+        return Task.CompletedTask;
     }
 }

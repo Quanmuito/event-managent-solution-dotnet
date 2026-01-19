@@ -8,7 +8,10 @@ using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
+using Ems.Common.Messages;
 using Ems.Common.Services.Tasks;
+using EventService.Data.Models;
+using EventService.Data.Repositories;
 using FluentAssertions;
 using MongoDB.Driver;
 using Moq;
@@ -18,17 +21,27 @@ public class HandleBookingServiceNotificationTests
 {
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
+    private readonly Mock<IEventRepository> _mockEventRepository;
     private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockQrCodeTaskQueue;
-    private readonly Mock<ITaskQueue<NotificationTaskMessage>> _mockNotificationTaskQueue;
+    private readonly Mock<ITaskQueue<EmailNotificationTaskMessage<BookingDto>>> _mockEmailNotificationTaskQueue;
+    private readonly Mock<ITaskQueue<PhoneNotificationTaskMessage<BookingDto>>> _mockPhoneNotificationTaskQueue;
     private readonly HandleBookingService _service;
 
     public HandleBookingServiceNotificationTests()
     {
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
+        _mockEventRepository = new Mock<IEventRepository>();
         _mockQrCodeTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _mockNotificationTaskQueue = new Mock<ITaskQueue<NotificationTaskMessage>>();
-        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockQrCodeTaskQueue.Object, _mockNotificationTaskQueue.Object);
+        _mockEmailNotificationTaskQueue = new Mock<ITaskQueue<EmailNotificationTaskMessage<BookingDto>>>();
+        _mockPhoneNotificationTaskQueue = new Mock<ITaskQueue<PhoneNotificationTaskMessage<BookingDto>>>();
+        _service = new HandleBookingService(
+            _mockRepository.Object,
+            _mockQrCodeRepository.Object,
+            _mockEventRepository.Object,
+            _mockQrCodeTaskQueue.Object,
+            _mockEmailNotificationTaskQueue.Object,
+            _mockPhoneNotificationTaskQueue.Object);
     }
 
     [Fact]
@@ -39,6 +52,8 @@ public class HandleBookingServiceNotificationTests
         var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
         createdBooking.Status = dto.Status;
 
+        _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Event { Id = dto.EventId });
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -50,8 +65,11 @@ public class HandleBookingServiceNotificationTests
 
         result.Should().NotBeNull();
         result.Id.Should().Be("507f1f77bcf86cd799439011");
-        _mockNotificationTaskQueue.Verify(x => x.EnqueueAsync(
-            It.Is<NotificationTaskMessage>(m => m.Booking.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Registered),
+        _mockEmailNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<EmailNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Registered),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockPhoneNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<PhoneNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Registered),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -63,6 +81,8 @@ public class HandleBookingServiceNotificationTests
         var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
         createdBooking.Status = dto.Status;
 
+        _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Event { Id = dto.EventId });
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -74,8 +94,11 @@ public class HandleBookingServiceNotificationTests
 
         result.Should().NotBeNull();
         result.Id.Should().Be("507f1f77bcf86cd799439011");
-        _mockNotificationTaskQueue.Verify(x => x.EnqueueAsync(
-            It.Is<NotificationTaskMessage>(m => m.Booking.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.QueueEnrolled),
+        _mockEmailNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<EmailNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.QueueEnrolled),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockPhoneNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<PhoneNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.QueueEnrolled),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -93,8 +116,11 @@ public class HandleBookingServiceNotificationTests
         var result = await _service.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
         result.Should().NotBeNull();
-        _mockNotificationTaskQueue.Verify(x => x.EnqueueAsync(
-            It.Is<NotificationTaskMessage>(m => m.Booking.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Updated),
+        _mockEmailNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<EmailNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Updated),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockPhoneNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<PhoneNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Updated),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -116,8 +142,11 @@ public class HandleBookingServiceNotificationTests
         var result = await _service.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
         result.Should().NotBeNull();
-        _mockNotificationTaskQueue.Verify(x => x.EnqueueAsync(
-            It.Is<NotificationTaskMessage>(m => m.Booking.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Updated),
+        _mockEmailNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<EmailNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Updated),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockPhoneNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<PhoneNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Updated),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -137,8 +166,11 @@ public class HandleBookingServiceNotificationTests
 
         result.Should().NotBeNull();
         result.Status.Should().Be(BookingStatus.Canceled);
-        _mockNotificationTaskQueue.Verify(x => x.EnqueueAsync(
-            It.Is<NotificationTaskMessage>(m => m.Booking.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
+        _mockEmailNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<EmailNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockPhoneNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<PhoneNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -158,8 +190,11 @@ public class HandleBookingServiceNotificationTests
 
         result.Should().NotBeNull();
         result.Status.Should().Be(BookingStatus.Canceled);
-        _mockNotificationTaskQueue.Verify(x => x.EnqueueAsync(
-            It.Is<NotificationTaskMessage>(m => m.Booking.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
+        _mockEmailNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<EmailNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockPhoneNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<PhoneNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -179,8 +214,11 @@ public class HandleBookingServiceNotificationTests
 
         result.Should().NotBeNull();
         result.Status.Should().Be(BookingStatus.Canceled);
-        _mockNotificationTaskQueue.Verify(x => x.EnqueueAsync(
-            It.Is<NotificationTaskMessage>(m => m.Booking.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
+        _mockEmailNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<EmailNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockPhoneNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<PhoneNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Canceled),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -200,8 +238,11 @@ public class HandleBookingServiceNotificationTests
 
         result.Should().NotBeNull();
         result.Status.Should().Be(BookingStatus.Registered);
-        _mockNotificationTaskQueue.Verify(x => x.EnqueueAsync(
-            It.Is<NotificationTaskMessage>(m => m.Booking.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Confirmed),
+        _mockEmailNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<EmailNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Confirmed),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockPhoneNotificationTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<PhoneNotificationTaskMessage<BookingDto>>(m => m.Data.Id == "507f1f77bcf86cd799439011" && m.Operation == BookingOperation.Confirmed),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }
