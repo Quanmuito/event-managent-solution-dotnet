@@ -6,6 +6,7 @@ using DatabaseService;
 using DatabaseService.Settings;
 using BookingService.Api.Services;
 using BookingService.Data.Repositories;
+using EventService.Data.Repositories;
 
 const string environmentVariablesPrefix = "BookingService_";
 ApiVersion apiVersion = new(1, 0);
@@ -49,9 +50,11 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
     services.AddSingleton<MongoDbContext>();
     services.AddScoped<IBookingRepository, BookingRepository>();
     services.AddScoped<IQrCodeRepository, QrCodeRepository>();
+    services.AddScoped<IEventRepository, EventRepository>();
     services.AddScoped<HandleBookingService>();
 
     services.AddTaskService<QrCodeTaskMessage, QrCodeTaskProcessor>();
+    services.AddTaskService<NotificationTaskMessage, NotificationTaskProcessor>();
 
     services.AddHealthChecks();
 

@@ -2,16 +2,18 @@ namespace BookingService.Api.Services;
 
 using MongoDB.Driver;
 using BookingService.Api.Models;
+using BookingService.Api.Utils;
+using BookingService.Api.Messages;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using Ems.Common.Services.Tasks;
-using BookingService.Api.Messages;
 
 public class HandleBookingService(
     IBookingRepository bookingRepository,
     IQrCodeRepository qrCodeRepository,
-    ITaskQueue<QrCodeTaskMessage> taskQueue)
+    ITaskQueue<QrCodeTaskMessage> qrCodeTaskQueue,
+    ITaskQueue<NotificationTaskMessage> notificationTaskQueue)
 {
     public async Task<Booking> Create(CreateBookingDto createDto, CancellationToken cancellationToken)
     {
@@ -30,7 +32,13 @@ public class HandleBookingService(
             throw new InvalidOperationException("Failed to create booking.");
 
         if (booking.Status == BookingStatus.Registered)
-            await taskQueue.EnqueueAsync(new QrCodeTaskMessage(booking.Id), cancellationToken);
+        {
+            await qrCodeTaskQueue.EnqueueAsync(new QrCodeTaskMessage(booking.Id), cancellationToken);
+            await EnqueueNotificationAsync(booking, BookingOperation.Registered, cancellationToken);
+        }
+
+        if (booking.Status == BookingStatus.QueueEnrolled)
+            await EnqueueNotificationAsync(booking, BookingOperation.QueueEnrolled, cancellationToken);
 
         return booking;
     }
@@ -70,6 +78,8 @@ public class HandleBookingService(
         var updateDef = Builders<Booking>.Update.Combine(updates);
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
+        await EnqueueNotificationAsync(result, BookingOperation.Updated, cancellationToken);
+
         return result;
     }
 
@@ -86,7 +96,9 @@ public class HandleBookingService(
 
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
-        await taskQueue.EnqueueAsync(new QrCodeTaskMessage(result.Id!), cancellationToken);
+        await qrCodeTaskQueue.EnqueueAsync(new QrCodeTaskMessage(result.Id!), cancellationToken);
+
+        await EnqueueNotificationAsync(result, BookingOperation.Confirmed, cancellationToken);
 
         return result;
     }
@@ -104,14 +116,22 @@ public class HandleBookingService(
 
         var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
 
+        await EnqueueNotificationAsync(result, BookingOperation.Canceled, cancellationToken);
+
         return result;
     }
 
     public async Task<bool> Delete(string id, CancellationToken cancellationToken)
     {
-        var booking = await bookingRepository.GetByIdAsync(id, cancellationToken);
         var deleted = await bookingRepository.DeleteAsync(id, cancellationToken);
 
         return deleted;
+    }
+
+    private async Task EnqueueNotificationAsync(Booking booking, string operation, CancellationToken cancellationToken)
+    {
+        await notificationTaskQueue.EnqueueAsync(
+            new NotificationTaskMessage(new BookingDto(booking), operation),
+            cancellationToken);
     }
 }

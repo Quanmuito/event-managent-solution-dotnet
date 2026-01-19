@@ -22,6 +22,7 @@
       <ProjectReference Include="..\..\AspNet.Common\AspNet.Common.csproj" />
       <ProjectReference Include="..\..\Ems.Common\Ems.Common.csproj" />
       <ProjectReference Include="..\..\DatabaseService\DatabaseService.csproj" />
+      <ProjectReference Include="..\..\EventService\EventService.Data\EventService.Data.csproj" />
       <ProjectReference Include="..\BookingService.Data\BookingService.Data.csproj" />
     </ItemGroup>
 
