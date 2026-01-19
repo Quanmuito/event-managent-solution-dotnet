@@ -25,13 +25,21 @@ dotnet restore
 dotnet build
 ```
 
-4. Run the EventService API:
+4. Run the services:
+
+**EventService API:**
 ```bash
 cd EventService/EventService.Api
 dotnet run
 ```
 
-The API will be available at `http://localhost:5000` (or the port configured in `launchSettings.json`).
+**BookingService API:**
+```bash
+cd BookingService/BookingService.Api
+dotnet run
+```
+
+The APIs will be available at the ports configured in their respective `launchSettings.json` files (typically `http://localhost:5000` for EventService and `http://localhost:5001` for BookingService).
 
 ## Verify
 
@@ -44,22 +52,29 @@ You should see `database-service-container` and `mongo-express-container` runnin
 2. Access Mongo Express:
 Open `http://localhost:8081` in your browser to view the database.
 
-3. Test the API health check:
+3. Test the API health checks:
 ```bash
 curl http://localhost:5000/health
+curl http://localhost:5001/health
 ```
 Should return: `Healthy`
 
 4. Check OpenAPI documentation (Development only):
-Visit `http://localhost:5000/openapi/v1.json`
+- EventService: Visit `http://localhost:5000/openapi/v1.json`
+- BookingService: Visit `http://localhost:5001/openapi/v1.json`
 
 ## Debug
 
 ### VS Code / Rider / Visual Studio
 
-1. Set `EventService.Api` as the startup project
+1. Set `EventService.Api` or `BookingService.Api` as the startup project
 2. Ensure Docker services are running (`docker compose up -d`)
 3. Set breakpoints and start debugging (F5)
+
+**Note:** To run both services simultaneously, you can:
+- Use multiple debug configurations
+- Run one service in debug mode and the other from the terminal
+- Use Docker Compose to orchestrate both services
 
 ### Common Issues
 

@@ -31,6 +31,12 @@
 - `Cancel_WithQueuePendingStatus_ShouldReturnOk` - Returns OkObjectResult when QueuePending booking is canceled
 - `Cancel_WithInvalidFormatId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id format is invalid
 - `Cancel_WithException_ShouldReturn500` - Returns 500 status code when exception occurs
+- `Confirm_WithValidId_ShouldReturnOk` - Returns OkObjectResult when booking is successfully confirmed
+- `Confirm_WithNullId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id is null
+- `Confirm_WithNonExistentId_ShouldReturnNotFound` - Returns NotFoundObjectResult when booking doesn't exist
+- `Confirm_WithNonQueuePendingStatus_ShouldReturnBadRequest` - Returns BadRequestObjectResult when booking status is not queue_pending
+- `Confirm_WithInvalidFormatId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id format is invalid
+- `Confirm_WithException_ShouldReturn500` - Returns 500 status code when exception occurs
 - `Delete_WithValidId_ShouldReturnNoContent` - Returns NoContentResult when valid id is provided
 - `Delete_WithNullId_ShouldReturnBadRequest` - Returns BadRequestObjectResult when id is null
 - `Delete_WithNonExistentId_ShouldReturnNotFound` - Returns NotFoundObjectResult when booking doesn't exist
@@ -40,6 +46,15 @@
 #### Controllers/V1/BookingControllerQrCodeTests.cs
 - `GetById_WithExistingQrCode_ShouldReturnOkWithQrCodeData` - Returns OkObjectResult with booking including QR code data when QR code exists
 - `GetById_WithNoQrCode_ShouldReturnOkWithNullQrCodeData` - Returns OkObjectResult with booking having null QR code data when no QR code exists
+
+#### Controllers/V1/BookingControllerNotificationTests.cs
+- `Create_WithRegisteredStatus_ShouldTriggerNotification` - Triggers email and phone notifications when booking is created with Registered status
+- `Create_WithQueueEnrolledStatus_ShouldTriggerNotification` - Triggers email and phone notifications when booking is created with QueueEnrolled status
+- `Update_WithValidDto_ShouldTriggerNotification` - Triggers email and phone notifications when booking is updated
+- `Confirm_WithValidId_ShouldTriggerNotification` - Triggers email and phone notifications when booking is confirmed
+- `Cancel_WithValidId_ShouldTriggerNotification` - Triggers email and phone notifications when booking is canceled
+- `Cancel_WithQueueEnrolledStatus_ShouldTriggerNotification` - Triggers email and phone notifications when QueueEnrolled booking is canceled
+- `Cancel_WithQueuePendingStatus_ShouldTriggerNotification` - Triggers email and phone notifications when QueuePending booking is canceled
 
 #### Models/CreateBookingDtoTests.cs
 - `Validate_WithValidStatus_ShouldReturnNoValidationErrors` - Returns no validation errors when dto is valid
@@ -83,10 +98,24 @@
 - `Cancel_WithQueuePendingStatus_ShouldCancelSuccessfully` - Cancels booking successfully when status is QueuePending
 - `Cancel_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when booking doesn't exist
 - `Cancel_WithInvalidFormatId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
+- `Confirm_WithValidId_ShouldConfirmAndReturnBooking` - Confirms and returns booking when valid id is provided
+- `Confirm_WithNonQueuePendingStatus_ShouldThrowInvalidOperationException` - Throws InvalidOperationException when booking status is not queue_pending
+- `Confirm_WithNonExistentId_ShouldThrowNotFoundException` - Throws NotFoundException when booking doesn't exist
+- `Confirm_WithInvalidFormatId_ShouldThrowFormatException` - Throws FormatException when id format is invalid
 
 #### Services/HandleBookingServiceQrCodeTests.cs
 - `GetById_WithExistingQrCode_ShouldReturnBookingDtoWithQrCodeData` - Returns BookingDto with QR code data when QR code exists
 - `GetById_WithNoQrCode_ShouldReturnBookingDtoWithNullQrCodeData` - Returns BookingDto with null QR code data when no QR code exists
+
+#### Services/HandleBookingServiceNotificationTests.cs
+- `Create_WithRegisteredStatus_ShouldTriggerNotification` - Triggers email and phone notifications when booking is created with Registered status
+- `Create_WithQueueEnrolledStatus_ShouldTriggerNotification` - Triggers email and phone notifications when booking is created with QueueEnrolled status
+- `Update_WithValidDto_ShouldTriggerNotification` - Triggers email and phone notifications when booking is updated
+- `Update_WithNullStatusButOtherFields_ShouldTriggerNotification` - Triggers email and phone notifications when booking is updated with null status but other fields
+- `Cancel_WithValidId_ShouldTriggerNotification` - Triggers email and phone notifications when booking is canceled
+- `Cancel_WithQueueEnrolledStatus_ShouldTriggerNotification` - Triggers email and phone notifications when QueueEnrolled booking is canceled
+- `Cancel_WithQueuePendingStatus_ShouldTriggerNotification` - Triggers email and phone notifications when QueuePending booking is canceled
+- `Confirm_WithValidId_ShouldTriggerNotification` - Triggers email and phone notifications when booking is confirmed
 
 #### Services/HandleQrCodeService/QrCodeTaskProcessorTests.cs
 - `ProcessAsync_WithValidMessage_ShouldGenerateAndSaveQrCode` - Generates and saves QR code when valid message is provided

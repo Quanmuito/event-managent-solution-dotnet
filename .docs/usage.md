@@ -377,6 +377,42 @@ Content-Type: application/json
 }
 ```
 
+#### Confirm Booking
+**POST** `/v1/bookings/{id}/confirm`
+
+Confirm a booking that is in queue. Only bookings with status `queue_pending` can be confirmed. Upon confirmation, the booking status changes to `registered` and a QR code generation task is automatically queued.
+
+**Path Parameters:**
+- `id` (string, required): Booking ID (MongoDB ObjectId format)
+
+**Response Codes:**
+- `200 OK`: Success - Returns confirmed booking
+- `400 Bad Request`: Invalid ID format, ID is null/empty, or booking status is not `queue_pending`
+- `404 Not Found`: Booking not found
+- `500 Internal Server Error`: Server error
+
+**Example Request:**
+```
+POST /v1/bookings/507f1f77bcf86cd799439011/confirm
+```
+
+**Example Response:**
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "eventId": "507f1f77bcf86cd799439012",
+  "status": "registered",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "1234567890",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-02T12:00:00Z",
+  "qrCodeData": null
+}
+```
+
+**Note:** When a booking is confirmed, its status changes from `queue_pending` to `registered`, and a QR code generation task is automatically queued. The QR code will be available in subsequent GET requests once generation is complete.
+
 #### Cancel Booking
 **POST** `/v1/bookings/{id}/cancel`
 
