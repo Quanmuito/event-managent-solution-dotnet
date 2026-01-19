@@ -1,5 +1,6 @@
 namespace BookingService.Api.Tests.Services;
 
+using System.Collections.Generic;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using BookingService.Api.Messages;
@@ -7,7 +8,6 @@ using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
-using DatabaseService.Exceptions;
 using Ems.Common.Messages;
 using Ems.Common.Services.Tasks;
 using EventService.Data.Models;
@@ -61,14 +61,14 @@ public class HandleBookingServiceTests
     }
 
     [Fact]
-    public async Task GetById_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task GetById_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
+            .ThrowsAsync(new KeyNotFoundException("Bookings with ID '507f1f77bcf86cd799439999' was not found."));
 
         var act = async () => await _service.GetById("507f1f77bcf86cd799439999", CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Bookings with ID '507f1f77bcf86cd799439999' was not found.");
     }
 
@@ -93,7 +93,7 @@ public class HandleBookingServiceTests
         createdBooking.Status = dto.Status;
 
         _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new EventService.Data.Models.Event { Id = dto.EventId });
+            .ReturnsAsync(new Event { Id = dto.EventId });
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -123,7 +123,7 @@ public class HandleBookingServiceTests
         createdBooking.Status = dto.Status;
 
         _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new EventService.Data.Models.Event { Id = dto.EventId });
+            .ReturnsAsync(new Event { Id = dto.EventId });
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -145,15 +145,15 @@ public class HandleBookingServiceTests
     }
 
     [Fact]
-    public async Task Create_WhenEventDoesNotExist_ShouldThrowNotFoundException()
+    public async Task Create_WhenEventDoesNotExist_ShouldThrowKeyNotFoundException()
     {
         var dto = TestDataBuilder.CreateValidCreateBookingDto();
         _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Events", dto.EventId));
+            .ThrowsAsync(new KeyNotFoundException($"Events with ID '{dto.EventId}' was not found."));
 
         var act = async () => await _service.Create(dto, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage($"Events with ID '{dto.EventId}' was not found.");
     }
 
@@ -162,7 +162,7 @@ public class HandleBookingServiceTests
     {
         var dto = TestDataBuilder.CreateValidCreateBookingDto();
         _mockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new EventService.Data.Models.Event { Id = dto.EventId });
+            .ReturnsAsync(new Event { Id = dto.EventId });
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -230,15 +230,15 @@ public class HandleBookingServiceTests
     }
 
     [Fact]
-    public async Task Update_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task Update_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateBookingDto();
         _mockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439999", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
+            .ThrowsAsync(new KeyNotFoundException("Bookings with ID '507f1f77bcf86cd799439999' was not found."));
 
         var act = async () => await _service.Update("507f1f77bcf86cd799439999", updateDto, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Bookings with ID '507f1f77bcf86cd799439999' was not found.");
     }
 
@@ -407,14 +407,14 @@ public class HandleBookingServiceTests
     }
 
     [Fact]
-    public async Task Confirm_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task Confirm_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
+            .ThrowsAsync(new KeyNotFoundException("Bookings with ID '507f1f77bcf86cd799439999' was not found."));
 
         var act = async () => await _service.Confirm("507f1f77bcf86cd799439999", CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Bookings with ID '507f1f77bcf86cd799439999' was not found.");
     }
 
@@ -431,14 +431,14 @@ public class HandleBookingServiceTests
     }
 
     [Fact]
-    public async Task Cancel_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task Cancel_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
+            .ThrowsAsync(new KeyNotFoundException("Bookings with ID '507f1f77bcf86cd799439999' was not found."));
 
         var act = async () => await _service.Cancel("507f1f77bcf86cd799439999", CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Bookings with ID '507f1f77bcf86cd799439999' was not found.");
     }
 

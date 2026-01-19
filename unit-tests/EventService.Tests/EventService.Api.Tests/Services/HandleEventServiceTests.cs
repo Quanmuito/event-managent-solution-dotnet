@@ -1,6 +1,6 @@
 namespace EventService.Api.Tests.Services;
 
-using DatabaseService.Exceptions;
+using System.Collections.Generic;
 using EventService.Api.Models;
 using EventService.Api.Services;
 using EventService.Data.Models;
@@ -91,14 +91,14 @@ public class HandleEventServiceTests
     }
 
     [Fact]
-    public async Task GetById_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task GetById_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Events", "507f1f77bcf86cd799439999"));
+            .ThrowsAsync(new KeyNotFoundException("Events with ID '507f1f77bcf86cd799439999' was not found."));
 
         var act = async () => await _service.GetById("507f1f77bcf86cd799439999", CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Events with ID '507f1f77bcf86cd799439999' was not found.");
     }
 
@@ -189,15 +189,15 @@ public class HandleEventServiceTests
     }
 
     [Fact]
-    public async Task Update_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task Update_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
         _mockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439999", It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Events", "507f1f77bcf86cd799439999"));
+            .ThrowsAsync(new KeyNotFoundException("Events with ID '507f1f77bcf86cd799439999' was not found."));
 
         var act = async () => await _service.Update("507f1f77bcf86cd799439999", updateDto, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Events with ID '507f1f77bcf86cd799439999' was not found.");
     }
 

@@ -1,7 +1,7 @@
 namespace DatabaseService.Tests.Repositories;
 
+using System.Collections.Generic;
 using DatabaseService;
-using DatabaseService.Exceptions;
 using DatabaseService.Repositories;
 using DatabaseService.Tests.Helpers;
 using DatabaseService.Tests.Models;
@@ -40,14 +40,14 @@ public class RepositoryTests
     }
 
     [Fact]
-    public async Task GetByIdAsync_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task GetByIdAsync_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         var entityId = "507f1f77bcf86cd799439999";
         MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, null);
 
         var act = async () => await _repository.GetByIdAsync(entityId, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage($"TestCollection with ID '{entityId}' was not found.");
     }
 
@@ -135,7 +135,7 @@ public class RepositoryTests
     }
 
     [Fact]
-    public async Task UpdateAsync_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task UpdateAsync_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         var entityId = "507f1f77bcf86cd799439999";
         var updateDefinition = Builders<TestEntity>.Update.Set(e => e.Title, "Updated Title");
@@ -149,7 +149,7 @@ public class RepositoryTests
 
         var act = async () => await _repository.UpdateAsync(entityId, updateDefinition, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage($"TestCollection with ID '{entityId}' was not found.");
     }
 

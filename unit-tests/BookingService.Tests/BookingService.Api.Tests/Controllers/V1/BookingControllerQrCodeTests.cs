@@ -12,13 +12,11 @@ using Ems.Common.Services.Tasks;
 using EventService.Data.Repositories;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
 public class BookingControllerQrCodeTests
 {
-    private readonly Mock<ILogger<BookingController>> _mockLogger;
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
     private readonly Mock<IEventRepository> _mockEventRepository;
@@ -30,7 +28,6 @@ public class BookingControllerQrCodeTests
 
     public BookingControllerQrCodeTests()
     {
-        _mockLogger = new Mock<ILogger<BookingController>>();
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
         _mockEventRepository = new Mock<IEventRepository>();
@@ -44,7 +41,7 @@ public class BookingControllerQrCodeTests
             _mockQrCodeTaskQueue.Object,
             _mockEmailNotificationTaskQueue.Object,
             _mockPhoneNotificationTaskQueue.Object);
-        _controller = new BookingController(_mockLogger.Object, _bookingService);
+        _controller = new BookingController(_bookingService);
     }
 
     [Fact]

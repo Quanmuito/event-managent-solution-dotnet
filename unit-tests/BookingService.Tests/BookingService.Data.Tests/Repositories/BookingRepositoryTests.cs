@@ -1,11 +1,11 @@
 namespace BookingService.Data.Tests.Repositories;
 
+using System.Collections.Generic;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using DatabaseService;
-using DatabaseService.Exceptions;
 using TestUtilities.Helpers;
 using FluentAssertions;
 using MongoDB.Driver;
@@ -41,14 +41,14 @@ public class BookingRepositoryTests
     }
 
     [Fact]
-    public async Task GetByIdAsync_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task GetByIdAsync_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         var bookingId = "507f1f77bcf86cd799439999";
         MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, null);
 
         var act = async () => await _repository.GetByIdAsync(bookingId, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage($"Bookings with ID '{bookingId}' was not found.");
     }
 
@@ -117,7 +117,7 @@ public class BookingRepositoryTests
     }
 
     [Fact]
-    public async Task UpdateAsync_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task UpdateAsync_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         var bookingId = "507f1f77bcf86cd799439999";
         var updateDefinition = Builders<Booking>.Update.Set(b => b.Status, BookingStatus.Canceled);
@@ -131,7 +131,7 @@ public class BookingRepositoryTests
 
         var act = async () => await _repository.UpdateAsync(bookingId, updateDefinition, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage($"Bookings with ID '{bookingId}' was not found.");
     }
 

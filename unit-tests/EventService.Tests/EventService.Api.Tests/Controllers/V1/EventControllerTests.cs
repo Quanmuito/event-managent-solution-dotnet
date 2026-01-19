@@ -1,6 +1,6 @@
 namespace EventService.Api.Tests.Controllers.V1;
 
-using DatabaseService.Exceptions;
+using System.Collections.Generic;
 using EventService.Api.Controllers.V1;
 using EventService.Api.Models;
 using EventService.Api.Services;
@@ -10,24 +10,21 @@ using EventService.Tests.Helpers;
 using TestUtilities.Helpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Moq;
 using Xunit;
 
 public class EventControllerTests
 {
-    private readonly Mock<ILogger<EventController>> _mockLogger;
     private readonly Mock<IEventRepository> _mockRepository;
     private readonly HandleEventService _eventService;
     private readonly EventController _controller;
 
     public EventControllerTests()
     {
-        _mockLogger = new Mock<ILogger<EventController>>();
         _mockRepository = new Mock<IEventRepository>();
         _eventService = new HandleEventService(_mockRepository.Object);
-        _controller = new EventController(_mockLogger.Object, _eventService);
+        _controller = new EventController(_eventService);
     }
 
     [Fact]
@@ -70,14 +67,15 @@ public class EventControllerTests
     }
 
     [Fact]
-    public async Task Search_WithException_ShouldReturn500()
+    public async Task Search_WithException_ShouldThrowException()
     {
         _mockRepository.Setup(x => x.SearchAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
-        var result = await _controller.Search("test", CancellationToken.None);
+        var act = async () => await _controller.Search("test", CancellationToken.None);
 
-        ControllerTestHelper.AssertInternalServerError(result);
+        await act.Should().ThrowAsync<Exception>()
+            .WithMessage("Database error");
     }
 
     [Fact]
@@ -112,36 +110,39 @@ public class EventControllerTests
     }
 
     [Fact]
-    public async Task GetById_WithNonExistentId_ShouldReturnNotFound()
+    public async Task GetById_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Events", "507f1f77bcf86cd799439999"));
+            .ThrowsAsync(new KeyNotFoundException("Events with ID '507f1f77bcf86cd799439999' was not found."));
 
-        var result = await _controller.GetById("507f1f77bcf86cd799439999", CancellationToken.None);
+        var act = async () => await _controller.GetById("507f1f77bcf86cd799439999", CancellationToken.None);
 
-        result.Should().BeOfType<NotFoundObjectResult>();
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage("Events with ID '507f1f77bcf86cd799439999' was not found.");
     }
 
     [Fact]
-    public async Task GetById_WithInvalidFormatId_ShouldReturnBadRequest()
+    public async Task GetById_WithInvalidFormatId_ShouldThrowFormatException()
     {
         _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
-        var result = await _controller.GetById("invalid-id", CancellationToken.None);
+        var act = async () => await _controller.GetById("invalid-id", CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        await act.Should().ThrowAsync<FormatException>()
+            .WithMessage("Invalid ObjectId format: invalid-id");
     }
 
     [Fact]
-    public async Task GetById_WithException_ShouldReturn500()
+    public async Task GetById_WithException_ShouldThrowException()
     {
         _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
-        var result = await _controller.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
+        var act = async () => await _controller.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
 
-        ControllerTestHelper.AssertInternalServerError(result);
+        await act.Should().ThrowAsync<Exception>()
+            .WithMessage("Database error");
     }
 
     [Fact]
@@ -172,27 +173,29 @@ public class EventControllerTests
     }
 
     [Fact]
-    public async Task Create_WithArgumentException_ShouldReturnBadRequest()
+    public async Task Create_WithArgumentException_ShouldThrowArgumentException()
     {
         var createDto = TestDataBuilder.CreateValidCreateEventDto();
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Invalid argument"));
 
-        var result = await _controller.Create(createDto, CancellationToken.None);
+        var act = async () => await _controller.Create(createDto, CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("Invalid argument");
     }
 
     [Fact]
-    public async Task Create_WithException_ShouldReturn500()
+    public async Task Create_WithException_ShouldThrowException()
     {
         var createDto = TestDataBuilder.CreateValidCreateEventDto();
         _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Event>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
-        var result = await _controller.Create(createDto, CancellationToken.None);
+        var act = async () => await _controller.Create(createDto, CancellationToken.None);
 
-        ControllerTestHelper.AssertInternalServerError(result);
+        await act.Should().ThrowAsync<Exception>()
+            .WithMessage("Database error");
     }
 
     [Fact]
@@ -233,51 +236,55 @@ public class EventControllerTests
     }
 
     [Fact]
-    public async Task Update_WithNonExistentId_ShouldReturnNotFound()
+    public async Task Update_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
         _mockRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Events", "507f1f77bcf86cd799439999"));
+            .ThrowsAsync(new KeyNotFoundException("Events with ID '507f1f77bcf86cd799439999' was not found."));
 
-        var result = await _controller.Update("507f1f77bcf86cd799439999", updateDto, CancellationToken.None);
+        var act = async () => await _controller.Update("507f1f77bcf86cd799439999", updateDto, CancellationToken.None);
 
-        result.Should().BeOfType<NotFoundObjectResult>();
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage("Events with ID '507f1f77bcf86cd799439999' was not found.");
     }
 
     [Fact]
-    public async Task Update_WithInvalidFormatId_ShouldReturnBadRequest()
+    public async Task Update_WithInvalidFormatId_ShouldThrowFormatException()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
         _mockRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
-        var result = await _controller.Update("invalid-id", updateDto, CancellationToken.None);
+        var act = async () => await _controller.Update("invalid-id", updateDto, CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        await act.Should().ThrowAsync<FormatException>()
+            .WithMessage("Invalid ObjectId format: invalid-id");
     }
 
     [Fact]
-    public async Task Update_WithArgumentException_ShouldReturnBadRequest()
+    public async Task Update_WithArgumentException_ShouldThrowArgumentException()
     {
-        var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
+        var updateDto = new UpdateEventDto();
         _mockRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("No valid fields to update."));
 
-        var result = await _controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
+        var act = async () => await _controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("No valid fields to update.");
     }
 
     [Fact]
-    public async Task Update_WithException_ShouldReturn500()
+    public async Task Update_WithException_ShouldThrowException()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateEventDto();
         _mockRepository.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
-        var result = await _controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
+        var act = async () => await _controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
-        ControllerTestHelper.AssertInternalServerError(result);
+        await act.Should().ThrowAsync<Exception>()
+            .WithMessage("Database error");
     }
 
     [Fact]
@@ -300,35 +307,37 @@ public class EventControllerTests
     }
 
     [Fact]
-    public async Task Delete_WithNonExistentId_ShouldReturnNotFound()
+    public async Task Delete_WithNonExistentId_ShouldReturn500()
     {
         _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await _controller.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
 
-        result.Should().BeOfType<NotFoundObjectResult>();
+        ControllerTestHelper.AssertInternalServerError(result);
     }
 
     [Fact]
-    public async Task Delete_WithInvalidFormatId_ShouldReturnBadRequest()
+    public async Task Delete_WithInvalidFormatId_ShouldThrowFormatException()
     {
         _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
-        var result = await _controller.Delete("invalid-id", CancellationToken.None);
+        var act = async () => await _controller.Delete("invalid-id", CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        await act.Should().ThrowAsync<FormatException>()
+            .WithMessage("Invalid ObjectId format: invalid-id");
     }
 
     [Fact]
-    public async Task Delete_WithException_ShouldReturn500()
+    public async Task Delete_WithException_ShouldThrowException()
     {
         _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
-        var result = await _controller.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
+        var act = async () => await _controller.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
-        ControllerTestHelper.AssertInternalServerError(result);
+        await act.Should().ThrowAsync<Exception>()
+            .WithMessage("Database error");
     }
 }

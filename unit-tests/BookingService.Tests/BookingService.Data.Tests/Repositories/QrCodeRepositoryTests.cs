@@ -1,9 +1,9 @@
 namespace BookingService.Data.Tests.Repositories;
 
+using System.Collections.Generic;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using DatabaseService;
-using DatabaseService.Exceptions;
 using TestUtilities.Helpers;
 using FluentAssertions;
 using MongoDB.Driver;
@@ -75,14 +75,14 @@ public class QrCodeRepositoryTests
     }
 
     [Fact]
-    public async Task GetByIdAsync_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task GetByIdAsync_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
         var qrCodeId = "507f1f77bcf86cd799439999";
         MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, null);
 
         var act = async () => await _repository.GetByIdAsync(qrCodeId, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
+        await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage($"QrCodes with ID '{qrCodeId}' was not found.");
     }
 

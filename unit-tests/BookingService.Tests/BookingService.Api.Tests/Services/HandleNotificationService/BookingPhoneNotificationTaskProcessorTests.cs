@@ -1,5 +1,6 @@
 namespace BookingService.Api.Tests.Services.HandleNotificationService;
 
+using System.Collections.Generic;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using BookingService.Api.Utils;
@@ -75,7 +76,7 @@ public class BookingPhoneNotificationTaskProcessorTests
         var message = new PhoneNotificationTaskMessage<BookingDto>(bookingDto, BookingOperation.Registered);
 
         _mockEventRepository.Setup(x => x.GetByIdAsync(booking.EventId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new DatabaseService.Exceptions.NotFoundException("Events", booking.EventId));
+            .ThrowsAsync(new KeyNotFoundException($"Events with ID '{booking.EventId}' was not found."));
 
         await _processor.ProcessAsync(message, CancellationToken.None);
 
