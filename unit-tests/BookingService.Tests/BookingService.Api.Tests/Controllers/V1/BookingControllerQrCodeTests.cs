@@ -3,11 +3,11 @@ namespace BookingService.Api.Tests.Controllers.V1;
 using BookingService.Api.Controllers.V1;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
+using BookingService.Api.Messages;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Tests.Helpers;
 using Ems.Common.Services.Tasks;
-using BookingService.Api.Messages;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -19,7 +19,8 @@ public class BookingControllerQrCodeTests
     private readonly Mock<ILogger<BookingController>> _mockLogger;
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
-    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
+    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockQrCodeTaskQueue;
+    private readonly Mock<ITaskQueue<NotificationTaskMessage>> _mockNotificationTaskQueue;
     private readonly HandleBookingService _bookingService;
     private readonly BookingController _controller;
 
@@ -28,8 +29,9 @@ public class BookingControllerQrCodeTests
         _mockLogger = new Mock<ILogger<BookingController>>();
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
-        _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
+        _mockQrCodeTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
+        _mockNotificationTaskQueue = new Mock<ITaskQueue<NotificationTaskMessage>>();
+        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockQrCodeTaskQueue.Object, _mockNotificationTaskQueue.Object);
         _controller = new BookingController(_mockLogger.Object, _bookingService);
     }
 

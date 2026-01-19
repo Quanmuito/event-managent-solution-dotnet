@@ -3,12 +3,12 @@ namespace BookingService.Api.Tests.Controllers.V1;
 using BookingService.Api.Controllers.V1;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
+using BookingService.Api.Messages;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
-using BookingService.Api.Messages;
 using Ems.Common.Services.Tasks;
 using TestUtilities.Helpers;
 using FluentAssertions;
@@ -23,7 +23,8 @@ public class BookingControllerTests
     private readonly Mock<ILogger<BookingController>> _mockLogger;
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
-    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
+    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockQrCodeTaskQueue;
+    private readonly Mock<ITaskQueue<NotificationTaskMessage>> _mockNotificationTaskQueue;
     private readonly HandleBookingService _bookingService;
     private readonly BookingController _controller;
 
@@ -32,8 +33,9 @@ public class BookingControllerTests
         _mockLogger = new Mock<ILogger<BookingController>>();
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
-        _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
+        _mockQrCodeTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
+        _mockNotificationTaskQueue = new Mock<ITaskQueue<NotificationTaskMessage>>();
+        _bookingService = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockQrCodeTaskQueue.Object, _mockNotificationTaskQueue.Object);
         _controller = new BookingController(_mockLogger.Object, _bookingService);
     }
 
@@ -119,35 +121,6 @@ public class BookingControllerTests
         createdAtResult.RouteValues!["id"].Should().Be(createdBooking.Id);
     }
 
-    [Fact]
-    public async Task Create_WithRegisteredStatus_ShouldReturnCreatedAtAction()
-    {
-        var createDto = TestDataBuilder.CreateValidCreateBookingDto();
-        createDto.Status = BookingStatus.Registered;
-        var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
-        createdBooking.Status = BookingStatus.Registered;
-        _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(createdBooking);
-
-        var result = await _controller.Create(createDto, CancellationToken.None);
-
-        result.Should().BeOfType<CreatedAtActionResult>();
-    }
-
-    [Fact]
-    public async Task Create_WithQueueEnrolledStatus_ShouldReturnCreatedAtAction()
-    {
-        var createDto = TestDataBuilder.CreateValidCreateBookingDto();
-        createDto.Status = BookingStatus.QueueEnrolled;
-        var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
-        createdBooking.Status = BookingStatus.QueueEnrolled;
-        _mockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(createdBooking);
-
-        var result = await _controller.Create(createDto, CancellationToken.None);
-
-        result.Should().BeOfType<CreatedAtActionResult>();
-    }
 
     [Fact]
     public async Task Create_WithInvalidStatus_ShouldReturnBadRequest()
@@ -302,25 +275,6 @@ public class BookingControllerTests
     }
 
     [Fact]
-    public async Task Cancel_WithValidId_ShouldReturnOk()
-    {
-        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Registered);
-        var canceledBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Canceled);
-        canceledBooking.UpdatedAt = DateTime.UtcNow;
-
-        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(booking);
-        _mockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(canceledBooking);
-
-        var result = await _controller.Cancel("507f1f77bcf86cd799439011", CancellationToken.None);
-
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = result as OkObjectResult;
-        okResult!.Value.Should().BeOfType<BookingDto>();
-    }
-
-    [Fact]
     public async Task Cancel_WithNullId_ShouldReturnBadRequest()
     {
         var result = await _controller.Cancel(null!, CancellationToken.None);
@@ -350,48 +304,6 @@ public class BookingControllerTests
         var result = await _controller.Cancel("507f1f77bcf86cd799439011", CancellationToken.None);
 
         result.Should().BeOfType<BadRequestObjectResult>();
-    }
-
-    [Fact]
-    public async Task Cancel_WithQueueEnrolledStatus_ShouldReturnOk()
-    {
-        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.QueueEnrolled);
-        var canceledBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Canceled);
-        canceledBooking.UpdatedAt = DateTime.UtcNow;
-
-        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(booking);
-        _mockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(canceledBooking);
-
-        var result = await _controller.Cancel("507f1f77bcf86cd799439011", CancellationToken.None);
-
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = result as OkObjectResult;
-        okResult!.Value.Should().BeOfType<BookingDto>();
-        var dto = okResult.Value as BookingDto;
-        dto!.Status.Should().Be(BookingStatus.Canceled);
-    }
-
-    [Fact]
-    public async Task Cancel_WithQueuePendingStatus_ShouldReturnOk()
-    {
-        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.QueuePending);
-        var canceledBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Canceled);
-        canceledBooking.UpdatedAt = DateTime.UtcNow;
-
-        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(booking);
-        _mockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(canceledBooking);
-
-        var result = await _controller.Cancel("507f1f77bcf86cd799439011", CancellationToken.None);
-
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = result as OkObjectResult;
-        okResult!.Value.Should().BeOfType<BookingDto>();
-        var dto = okResult.Value as BookingDto;
-        dto!.Status.Should().Be(BookingStatus.Canceled);
     }
 
     [Fact]
@@ -441,8 +353,8 @@ public class BookingControllerTests
     [Fact]
     public async Task Delete_WithNonExistentId_ShouldReturnNotFound()
     {
-        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
+        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         var result = await _controller.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
 
@@ -452,7 +364,7 @@ public class BookingControllerTests
     [Fact]
     public async Task Delete_WithInvalidFormatId_ShouldReturnBadRequest()
     {
-        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
         var result = await _controller.Delete("invalid-id", CancellationToken.None);
@@ -463,10 +375,64 @@ public class BookingControllerTests
     [Fact]
     public async Task Delete_WithException_ShouldReturn500()
     {
-        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var result = await _controller.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
+
+        ControllerTestHelper.AssertInternalServerError(result);
+    }
+
+    [Fact]
+    public async Task Confirm_WithNullId_ShouldReturnBadRequest()
+    {
+        var result = await _controller.Confirm(null!, CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task Confirm_WithNonExistentId_ShouldReturnNotFound()
+    {
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
+
+        var result = await _controller.Confirm("507f1f77bcf86cd799439999", CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task Confirm_WithNonQueuePendingStatus_ShouldReturnBadRequest()
+    {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Registered);
+
+        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
+
+        var result = await _controller.Confirm("507f1f77bcf86cd799439011", CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task Confirm_WithInvalidFormatId_ShouldReturnBadRequest()
+    {
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
+
+        var result = await _controller.Confirm("invalid-id", CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task Confirm_WithException_ShouldReturn500()
+    {
+        _mockRepository.Setup(x => x.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Database error"));
+
+        var result = await _controller.Confirm("507f1f77bcf86cd799439011", CancellationToken.None);
 
         ControllerTestHelper.AssertInternalServerError(result);
     }

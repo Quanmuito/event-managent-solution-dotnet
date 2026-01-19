@@ -15,15 +15,17 @@ public class HandleBookingServiceQrCodeTests
 {
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
-    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
+    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockQrCodeTaskQueue;
+    private readonly Mock<ITaskQueue<NotificationTaskMessage>> _mockNotificationTaskQueue;
     private readonly HandleBookingService _service;
 
     public HandleBookingServiceQrCodeTests()
     {
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
-        _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
+        _mockQrCodeTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
+        _mockNotificationTaskQueue = new Mock<ITaskQueue<NotificationTaskMessage>>();
+        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockQrCodeTaskQueue.Object, _mockNotificationTaskQueue.Object);
     }
 
     [Fact]

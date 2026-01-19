@@ -2,13 +2,13 @@ namespace BookingService.Api.Tests.Services;
 
 using BookingService.Api.Models;
 using BookingService.Api.Services;
+using BookingService.Api.Messages;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using DatabaseService.Exceptions;
 using Ems.Common.Services.Tasks;
-using BookingService.Api.Messages;
 using FluentAssertions;
 using MongoDB.Driver;
 using Moq;
@@ -18,15 +18,17 @@ public class HandleBookingServiceTests
 {
     private readonly Mock<IBookingRepository> _mockRepository;
     private readonly Mock<IQrCodeRepository> _mockQrCodeRepository;
-    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockTaskQueue;
+    private readonly Mock<ITaskQueue<QrCodeTaskMessage>> _mockQrCodeTaskQueue;
+    private readonly Mock<ITaskQueue<NotificationTaskMessage>> _mockNotificationTaskQueue;
     private readonly HandleBookingService _service;
 
     public HandleBookingServiceTests()
     {
         _mockRepository = new Mock<IBookingRepository>();
         _mockQrCodeRepository = new Mock<IQrCodeRepository>();
-        _mockTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
-        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockTaskQueue.Object);
+        _mockQrCodeTaskQueue = new Mock<ITaskQueue<QrCodeTaskMessage>>();
+        _mockNotificationTaskQueue = new Mock<ITaskQueue<NotificationTaskMessage>>();
+        _service = new HandleBookingService(_mockRepository.Object, _mockQrCodeRepository.Object, _mockQrCodeTaskQueue.Object, _mockNotificationTaskQueue.Object);
     }
 
     [Fact]
@@ -92,7 +94,7 @@ public class HandleBookingServiceTests
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         _mockRepository.Verify(x => x.CreateAsync(It.Is<Booking>(b =>
             b.Status == BookingStatus.Registered), It.IsAny<CancellationToken>()), Times.Once);
-        _mockTaskQueue.Verify(x => x.EnqueueAsync(
+        _mockQrCodeTaskQueue.Verify(x => x.EnqueueAsync(
             It.Is<QrCodeTaskMessage>(m => m.BookingId == "507f1f77bcf86cd799439011"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -120,7 +122,7 @@ public class HandleBookingServiceTests
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         _mockRepository.Verify(x => x.CreateAsync(It.Is<Booking>(b =>
             b.Status == BookingStatus.QueueEnrolled), It.IsAny<CancellationToken>()), Times.Once);
-        _mockTaskQueue.Verify(x => x.EnqueueAsync(
+        _mockQrCodeTaskQueue.Verify(x => x.EnqueueAsync(
             It.IsAny<QrCodeTaskMessage>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -224,35 +226,31 @@ public class HandleBookingServiceTests
     [Fact]
     public async Task Delete_WithValidId_ShouldDeleteAndReturnTrue()
     {
-        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
-        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(booking);
         _mockRepository.Setup(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await _service.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
         result.Should().BeTrue();
-        _mockRepository.Verify(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Delete_WithNonExistentId_ShouldThrowNotFoundException()
+    public async Task Delete_WithNonExistentId_ShouldReturnFalse()
     {
-        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
+        _mockRepository.Setup(x => x.DeleteAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
-        var act = async () => await _service.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
+        var result = await _service.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>()
-            .WithMessage("Bookings with ID '507f1f77bcf86cd799439999' was not found.");
+        result.Should().BeFalse();
+        _mockRepository.Verify(x => x.DeleteAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Delete_WithInvalidFormatId_ShouldThrowFormatException()
     {
-        _mockRepository.Setup(x => x.GetByIdAsync("invalid-id", It.IsAny<CancellationToken>()))
+        _mockRepository.Setup(x => x.DeleteAsync("invalid-id", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
         var act = async () => await _service.Delete("invalid-id", CancellationToken.None);
@@ -336,6 +334,68 @@ public class HandleBookingServiceTests
         result.UpdatedAt.Should().NotBeNull();
         _mockRepository.Verify(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Confirm_WithValidId_ShouldConfirmAndReturnBooking()
+    {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.QueuePending);
+        var confirmedBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Registered);
+        confirmedBooking.UpdatedAt = DateTime.UtcNow;
+
+        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
+        _mockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(confirmedBooking);
+
+        var result = await _service.Confirm("507f1f77bcf86cd799439011", CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Status.Should().Be(BookingStatus.Registered);
+        result.UpdatedAt.Should().NotBeNull();
+        _mockRepository.Verify(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
+        _mockRepository.Verify(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockQrCodeTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<QrCodeTaskMessage>(m => m.BookingId == "507f1f77bcf86cd799439011"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Confirm_WithNonQueuePendingStatus_ShouldThrowInvalidOperationException()
+    {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Registered);
+
+        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
+
+        var act = async () => await _service.Confirm("507f1f77bcf86cd799439011", CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Only bookings with QueuePending status can be confirmed.");
+    }
+
+    [Fact]
+    public async Task Confirm_WithNonExistentId_ShouldThrowNotFoundException()
+    {
+        _mockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new NotFoundException("Bookings", "507f1f77bcf86cd799439999"));
+
+        var act = async () => await _service.Confirm("507f1f77bcf86cd799439999", CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Bookings with ID '507f1f77bcf86cd799439999' was not found.");
+    }
+
+    [Fact]
+    public async Task Confirm_WithInvalidFormatId_ShouldThrowFormatException()
+    {
+        _mockRepository.Setup(x => x.GetByIdAsync("invalid-id", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
+
+        var act = async () => await _service.Confirm("invalid-id", CancellationToken.None);
+
+        await act.Should().ThrowAsync<FormatException>()
+            .WithMessage("Invalid ObjectId format: invalid-id");
     }
 
     [Fact]
