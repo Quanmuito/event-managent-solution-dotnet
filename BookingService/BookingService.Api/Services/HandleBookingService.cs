@@ -8,7 +8,6 @@ using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using EventService.Data.Repositories;
-using DatabaseService.Exceptions;
 using Ems.Common.Messages;
 using Ems.Common.Services.Tasks;
 
@@ -22,14 +21,7 @@ public class HandleBookingService(
 {
     public async Task<Booking> Create(CreateBookingDto createDto, CancellationToken cancellationToken)
     {
-        try
-        {
-            await eventRepository.GetByIdAsync(createDto.EventId, cancellationToken);
-        }
-        catch (NotFoundException)
-        {
-            throw new NotFoundException("Events", createDto.EventId);
-        }
+        await eventRepository.GetByIdAsync(createDto.EventId, cancellationToken);
 
         var newBooking = new Booking
         {
@@ -138,6 +130,9 @@ public class HandleBookingService(
     public async Task<bool> Delete(string id, CancellationToken cancellationToken)
     {
         var deleted = await bookingRepository.DeleteAsync(id, cancellationToken);
+
+        // TODO: Send notification to the next in queue when queueService is implemented
+        // await queueService.EnqueueAsync(new QueueMessage(id), cancellationToken);
 
         return deleted;
     }

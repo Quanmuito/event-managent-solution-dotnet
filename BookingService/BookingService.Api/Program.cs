@@ -1,6 +1,6 @@
 using Asp.Versioning;
-using Microsoft.AspNetCore.Diagnostics;
 using Ems.Common.Extensions.Startup;
+using Ems.Common.Http.ExceptionHandler;
 using Ems.Common.Messages;
 using Ems.Common.Services.Notification;
 using DatabaseService;
@@ -22,8 +22,8 @@ try
     ConfigureServices(builder.Services, builder.Configuration);
 
     var app = builder.Build();
-    _ = app.Services.GetRequiredService<ILogger<Program>>();
-    ConfigureMiddleware(app);
+    app.UseExceptionHandler();
+    logger = app.Services.GetRequiredService<ILogger<Program>>();
     ConfigureEndpoints(app);
 
     await app.RunAsync();
@@ -71,33 +71,9 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
         options.AssumeDefaultVersionWhenUnspecified = true;
         options.DefaultApiVersion = apiVersion;
     });
-}
 
-void ConfigureMiddleware(WebApplication app)
-{
-    app.UseExceptionHandler(appError =>
-    {
-        appError.Run(async context =>
-        {
-            var statusCode = StatusCodes.Status500InternalServerError;
-            context.Response.StatusCode = statusCode;
-            context.Response.ContentType = "application/json";
-
-            var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
-            if (contextFeature != null)
-            {
-                var errorMessage = !string.IsNullOrWhiteSpace(contextFeature.Error?.Message)
-                    ? contextFeature.Error.Message
-                    : "Oops! Something went wrong...";
-
-                await context.Response.WriteAsJsonAsync(new
-                {
-                    StatusCode = statusCode,
-                    Message = errorMessage
-                });
-            }
-        });
-    });
+    services.AddExceptionHandler<GlobalExceptionHandler>();
+    services.AddProblemDetails();
 }
 
 void ConfigureEndpoints(WebApplication app)

@@ -1,8 +1,8 @@
 namespace DatabaseService.Repositories;
 
+using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using DatabaseService.Exceptions;
 
 public class Repository<T>(MongoDbContext mongoDbContext, string collectionName) : IRepository<T>
 {
@@ -13,7 +13,7 @@ public class Repository<T>(MongoDbContext mongoDbContext, string collectionName)
         var objectId = GetValidObjectId(id);
         var filter = Builders<T>.Filter.Eq("_id", objectId);
         var result = await Collection.Find(filter).FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException(collectionName, id);
+            ?? throw new KeyNotFoundException($"{collectionName} with ID '{id}' was not found.");
 
         return result;
     }
@@ -35,7 +35,7 @@ public class Repository<T>(MongoDbContext mongoDbContext, string collectionName)
         var filter = Builders<T>.Filter.Eq("_id", objectId);
         var options = new FindOneAndUpdateOptions<T> { ReturnDocument = ReturnDocument.After };
         var result = await Collection.FindOneAndUpdateAsync(filter, updateDefinition, options, cancellationToken)
-            ?? throw new NotFoundException(collectionName, id);
+            ?? throw new KeyNotFoundException($"{collectionName} with ID '{id}' was not found.");
 
         return result;
     }
