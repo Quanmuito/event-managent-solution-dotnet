@@ -2,7 +2,8 @@ using Asp.Versioning;
 using Ems.Common.Extensions.Startup;
 using Ems.Common.Http.ExceptionHandler;
 using Ems.Common.Messages;
-using Ems.Common.Services.Notification;
+using AWSService.Extensions;
+using NotificationService.Services;
 using DatabaseService;
 using DatabaseService.Settings;
 using BookingService.Api.Services;
@@ -55,6 +56,8 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
     services.AddScoped<IQrCodeRepository, QrCodeRepository>();
     services.AddScoped<IEventRepository, EventRepository>();
     services.AddScoped<HandleBookingService>();
+
+    services.AddAWSSES(configuration);
 
     services.AddSingleton<IEmailService, EmailService>();
     services.AddSingleton<IPhoneService, PhoneService>();

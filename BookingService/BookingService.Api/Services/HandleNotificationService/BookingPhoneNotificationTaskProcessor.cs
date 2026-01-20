@@ -2,7 +2,7 @@ namespace BookingService.Api.Services;
 
 using BookingService.Api.Models;
 using BookingService.Api.Utils;
-using Ems.Common.Services.Notification;
+using NotificationService.Services;
 using Ems.Common.Services.Tasks;
 using EventService.Data.Repositories;
 using Microsoft.Extensions.Logging;

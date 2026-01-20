@@ -3,7 +3,7 @@ namespace BookingService.Api.Services;
 using BookingService.Api.Models;
 using BookingService.Api.Utils;
 using EventService.Data.Repositories;
-using Ems.Common.Services.Notification;
+using NotificationService.Services;
 using Ems.Common.Services.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -53,9 +53,7 @@ public class BookingEmailNotificationTaskProcessor(
             content += $"  Start Time: {eventEntity.TimeStart:yyyy-MM-dd HH:mm:ss} UTC\n";
             content += $"  End Time: {eventEntity.TimeEnd:yyyy-MM-dd HH:mm:ss} UTC\n";
             if (!string.IsNullOrWhiteSpace(eventEntity.Details))
-            {
                 content += $"  Details: {eventEntity.Details}\n";
-            }
         }
         catch (Exception ex)
         {
