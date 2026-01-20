@@ -30,6 +30,17 @@
     networks:
       - app_network
 
+  localstack:
+    container_name: localstack-container
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=ses
+      - DEBUG=1
+    networks:
+      - app_network
+
 volumes:
   mongo_data:
     driver: local
