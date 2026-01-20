@@ -1,11 +1,6 @@
-namespace Ems.Common.Services.Notification;
+namespace NotificationService.Services;
 
 using Microsoft.Extensions.Logging;
-
-public interface IPhoneService
-{
-    Task SendAsync(string recipient, string content, CancellationToken cancellationToken);
-}
 
 public class PhoneService(ILogger<PhoneService> logger) : IPhoneService
 {

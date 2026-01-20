@@ -1,7 +1,7 @@
 namespace Ems.Common.Services.Tasks;
 
 using Ems.Common.Messages;
-using Ems.Common.Services.Notification;
+using NotificationService.Services;
 using Microsoft.Extensions.Logging;
 
 public abstract class PhoneNotificationTaskProcessor<TData>(

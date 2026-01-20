@@ -17,6 +17,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\DatabaseService\DatabaseService.csproj" />
+      <ProjectReference Include="..\NotificationService\NotificationService.csproj" />
     </ItemGroup>
 
 </Project>
