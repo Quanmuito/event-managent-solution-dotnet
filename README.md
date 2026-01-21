@@ -53,12 +53,15 @@ This is an ongoing project for learning purpose to get an understand on <strong>
     - Search / Filter events by its data
     - Update events
     - Delete events
-- Booking service
+- Booking service ✅
     - Register for event
     - Cancel registration
     - Queue enrollment
     - Queue confirmation
     - QR code generation
+- Notification service ✅
+    - Send emails/SMS with specified content
+    - Send emails/SMS with pre-defined templates
 - Queue service
     - Get queue length
     - Enqueue
@@ -67,9 +70,6 @@ This is an ongoing project for learning purpose to get an understand on <strong>
 - Auth service 
     - Authentication
     - Authorization
-- Notification service
-    - Opt1: Send emails with specified content
-    - Opt2: Send emails with pre-defined templates
 
 ### Language and tools
 - .NET Core 9.0

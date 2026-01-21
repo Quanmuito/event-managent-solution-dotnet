@@ -7,7 +7,7 @@ using BookingService.Api.Utils;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using Ems.Common.Messages;
-using Ems.Common.Services.Notification;
+using NotificationService.Services;
 using EventService.Data.Models;
 using EventService.Data.Repositories;
 using Microsoft.Extensions.Logging;

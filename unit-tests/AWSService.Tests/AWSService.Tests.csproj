@@ -21,14 +21,11 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7.400.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\BookingService\BookingService.Api\BookingService.Api.csproj" />
-        <ProjectReference Include="..\..\BookingService\BookingService.Data\BookingService.Data.csproj" />
-        <ProjectReference Include="..\..\DatabaseService\DatabaseService.csproj" />
-        <ProjectReference Include="..\..\EventService\EventService.Data\EventService.Data.csproj" />
-        <ProjectReference Include="..\..\NotificationService\NotificationService.csproj" />
+        <ProjectReference Include="..\..\AWSService\AWSService.csproj" />
         <ProjectReference Include="..\TestUtilities\TestUtilities.csproj" />
     </ItemGroup>
 
