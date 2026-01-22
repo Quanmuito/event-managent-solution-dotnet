@@ -1,15 +1,15 @@
 namespace BookingService.Api.Services;
 
-using MongoDB.Driver;
-using BookingService.Api.Models;
 using BookingService.Api.Messages;
+using BookingService.Api.Models;
 using BookingService.Api.Utils;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
-using EventService.Data.Repositories;
-using Ems.Common.Messages;
 using Ems.Common.Services.Tasks;
+using EventService.Data.Repositories;
+using NotificationService.Messages;
+using MongoDB.Driver;
 
 public class HandleBookingService(
     IBookingRepository bookingRepository,

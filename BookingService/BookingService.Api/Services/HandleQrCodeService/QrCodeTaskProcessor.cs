@@ -1,9 +1,9 @@
 namespace BookingService.Api.Services;
 
+using BookingService.Api.Messages;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using Ems.Common.Services.Tasks;
-using BookingService.Api.Messages;
 using QRCoder;
 
 public class QrCodeTaskProcessor(IQrCodeRepository qrCodeRepository, ILogger<QrCodeTaskProcessor> logger) : ITaskProcessor<QrCodeTaskMessage>
@@ -11,7 +11,7 @@ public class QrCodeTaskProcessor(IQrCodeRepository qrCodeRepository, ILogger<QrC
     public async Task ProcessAsync(QrCodeTaskMessage message, CancellationToken cancellationToken)
     {
         var bookingId = message.BookingId;
-        logger.LogInformation("Generating QR code for BookingId: {BookingId}", bookingId);
+        logger.LogInformation("[TASK - PROCESSING] Generating QR code for BookingId: {BookingId}", bookingId);
 
         var qrContent = bookingId;
 
@@ -27,6 +27,6 @@ public class QrCodeTaskProcessor(IQrCodeRepository qrCodeRepository, ILogger<QrC
         };
 
         await qrCodeRepository.CreateAsync(qrCodeEntity, cancellationToken);
-        logger.LogInformation("QR code generated successfully for BookingId: {BookingId}", bookingId);
+        logger.LogInformation("[TASK - SUCCESS] QR code generated for BookingId: {BookingId}", bookingId);
     }
 }

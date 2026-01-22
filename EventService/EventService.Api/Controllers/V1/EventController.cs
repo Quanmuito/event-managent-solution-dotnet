@@ -1,10 +1,10 @@
 namespace EventService.Api.Controllers.V1;
 
+using EventService.Api.Models;
+using EventService.Api.Services;
+using Ems.Common.Http.Responses.Errors;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using Ems.Common.Http.Responses.Errors;
-using Services;
-using Models;
 
 [ApiController]
 [ApiVersion("1.0")]

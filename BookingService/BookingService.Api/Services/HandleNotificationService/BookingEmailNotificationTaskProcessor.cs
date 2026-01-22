@@ -4,7 +4,7 @@ using BookingService.Api.Models;
 using BookingService.Api.Utils;
 using EventService.Data.Repositories;
 using NotificationService.Services;
-using Ems.Common.Services.Tasks;
+using NotificationService.Services.Tasks;
 using Microsoft.Extensions.Logging;
 
 public class BookingEmailNotificationTaskProcessor(
@@ -67,7 +67,7 @@ public class BookingEmailNotificationTaskProcessor(
 
     protected override Task HandleBusinessLogicAsync(BookingDto booking, string operation, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Handling business logic for email notification: BookingId={BookingId}, Operation={Operation}", booking.Id, operation);
+        logger.LogInformation("[TASK - PROCESSING] Handling business logic for email notification: BookingId={BookingId}, Operation={Operation}", booking.Id, operation);
         return Task.CompletedTask;
     }
 }

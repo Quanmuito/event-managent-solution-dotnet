@@ -1,10 +1,11 @@
-using Asp.Versioning;
-using Ems.Common.Extensions.Startup;
-using Ems.Common.Http.ExceptionHandler;
-using DatabaseService;
-using DatabaseService.Settings;
 using EventService.Api.Services;
 using EventService.Data.Repositories;
+using DatabaseService;
+using DatabaseService.Settings;
+using AspNet.Common.Extensions;
+using Ems.Common.Extensions.Startup;
+using Ems.Common.Http.ExceptionHandler;
+using Asp.Versioning;
 
 const string environmentVariablesPrefix = "EventService_";
 ApiVersion apiVersion = new(1, 0);
@@ -17,9 +18,9 @@ try
     ConfigureServices(builder.Services, builder.Configuration);
 
     var app = builder.Build();
-    logger = app.Services.GetRequiredService<ILogger<Program>>();
     app.UseExceptionHandler();
-    ConfigureEndpoints(app);
+    app.MapCommonApiEndpoints();
+    logger = app.Services.GetRequiredService<ILogger<Program>>();
 
     await app.RunAsync();
 }
@@ -41,36 +42,10 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
 {
     services.Configure<MongoDbSettings>(configuration.GetSection("MongoDb"));
 
-    services.AddControllers();
-    services.AddOpenApi();
+    services.AddCommonApiServices(apiVersion);
+    services.AddExceptionHandler<GlobalExceptionHandler>();
 
-    services.AddEndpointsApiExplorer();
     services.AddSingleton<MongoDbContext>();
     services.AddScoped<IEventRepository, EventRepository>();
     services.AddScoped<HandleEventService>();
-
-    services.AddHealthChecks();
-
-    services.AddApiVersioning(options =>
-    {
-        options.ReportApiVersions = true;
-        options.AssumeDefaultVersionWhenUnspecified = true;
-        options.DefaultApiVersion = apiVersion;
-    });
-
-    services.AddExceptionHandler<GlobalExceptionHandler>();
-    services.AddProblemDetails();
-}
-
-void ConfigureEndpoints(WebApplication app)
-{
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi();
-    }
-
-    app.UseAuthorization();
-    app.MapGet("/", () => "Hello World!");
-    app.MapHealthChecks("/health");
-    app.MapControllers();
 }

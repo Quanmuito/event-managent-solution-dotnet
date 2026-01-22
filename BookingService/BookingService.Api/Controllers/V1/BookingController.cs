@@ -1,10 +1,10 @@
 namespace BookingService.Api.Controllers.V1;
 
+using BookingService.Api.Models;
+using BookingService.Api.Services;
+using Ems.Common.Http.Responses.Errors;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using Ems.Common.Http.Responses.Errors;
-using Services;
-using Models;
 
 [ApiController]
 [ApiVersion("1.0")]

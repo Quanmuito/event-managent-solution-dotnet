@@ -1,9 +1,9 @@
 namespace EventService.Api.Services;
 
-using MongoDB.Driver;
 using EventService.Api.Models;
 using EventService.Data.Models;
 using EventService.Data.Repositories;
+using MongoDB.Driver;
 
 public class HandleEventService(IEventRepository eventRepository)
 {
@@ -56,10 +56,10 @@ public class HandleEventService(IEventRepository eventRepository)
         if (updateDto.TimeEnd.HasValue)
             updates.Add(Builders<Event>.Update.Set(e => e.TimeEnd, updateDto.TimeEnd.Value));
 
-        updates.Add(Builders<Event>.Update.Set(e => e.UpdatedAt, DateTime.UtcNow));
-
-        if (updates.Count == 1)
+        if (updates.Count == 0)
             throw new ArgumentException("No valid fields to update.");
+
+        updates.Add(Builders<Event>.Update.Set(e => e.UpdatedAt, DateTime.UtcNow));
 
         var updateDef = Builders<Event>.Update.Combine(updates);
 
