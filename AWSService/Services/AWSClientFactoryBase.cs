@@ -1,8 +1,8 @@
 namespace AWSService.Services;
 
+using AWSService.Settings;
 using Amazon;
 using Amazon.Runtime;
-using AWSService.Settings;
 using Microsoft.Extensions.Options;
 
 public abstract class AWSClientFactoryBase<TClient, TConfig, TSettings>(IOptions<TSettings> settings)

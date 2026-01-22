@@ -1,8 +1,8 @@
 namespace DatabaseService;
 
+using DatabaseService.Settings;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using DatabaseService.Settings;
 
 public class MongoDbContext
 {

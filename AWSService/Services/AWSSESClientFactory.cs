@@ -1,7 +1,7 @@
 namespace AWSService.Services;
 
-using Amazon.SimpleEmail;
 using AWSService.Settings;
+using Amazon.SimpleEmail;
 using Microsoft.Extensions.Options;
 
 public class AWSSESClientFactory(IOptions<AWSSESSettings> settings)

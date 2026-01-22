@@ -15,9 +15,4 @@
       <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\DatabaseService\DatabaseService.csproj" />
-      <ProjectReference Include="..\NotificationService\NotificationService.csproj" />
-    </ItemGroup>
-
 </Project>

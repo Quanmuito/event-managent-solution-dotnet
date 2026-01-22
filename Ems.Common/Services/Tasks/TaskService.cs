@@ -19,7 +19,7 @@ public class TaskService<TMessage>(
                 using var scope = serviceProvider.CreateScope();
                 var processor = scope.ServiceProvider.GetRequiredService<ITaskProcessor<TMessage>>();
                 await processor.ProcessAsync(message, stoppingToken);
-                logger.LogInformation("Successfully processed background task of type {MessageType}", typeof(TMessage).Name);
+                logger.LogInformation("[TASK - SUCCESS] Background task of type {MessageType} processed", typeof(TMessage).Name);
             }
             catch (Exception ex)
             {

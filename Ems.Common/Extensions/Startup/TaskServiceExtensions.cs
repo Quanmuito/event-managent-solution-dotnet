@@ -1,7 +1,7 @@
 namespace Ems.Common.Extensions.Startup;
 
-using System.Threading.Channels;
 using Ems.Common.Services.Tasks;
+using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 
 public static class TaskServiceExtensions
