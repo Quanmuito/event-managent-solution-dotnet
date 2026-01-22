@@ -1,10 +1,10 @@
 namespace NotificationService.Services;
 
+using AWSService.Settings;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using AWSService.Settings;
 
 public class EmailService(
     IAmazonSimpleEmailService sesClient,
@@ -61,7 +61,7 @@ public class EmailService(
         {
             var response = await sesClient.SendEmailAsync(request, cancellationToken);
             logger.LogInformation(
-                "Email sent to {Recipient} with subject: {Subject}, MessageId: {MessageId}",
+                "EMAIL SERVICE: Email sent to {Recipient} with subject: {Subject}, MessageId: {MessageId}",
                 recipient, subject, response.MessageId);
         }
         catch (Exception ex)

@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\AWSService\AWSService.csproj" />
+        <ProjectReference Include="..\Ems.Common\Ems.Common.csproj" />
     </ItemGroup>
 
 </Project>
