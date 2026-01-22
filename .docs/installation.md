@@ -1,19 +1,21 @@
 ## Prerequisites
 
-- .NET SDK 9.0 or later
+- .NET SDK 9.0
 - Docker Desktop (or Docker Engine + Docker Compose)
 - IDE (Visual Studio, Rider, or VS Code with C# extension)
 
 ## Installation
 
-1. Start the database services using Docker Compose:
+1. Start the infrastructure services using Docker Compose:
 ```bash
 docker compose up -d
 ```
 
 This will start:
-- MongoDB on port 27017
+- MongoDB (database-service) on port 27017
 - Mongo Express (database UI) on port 8081
+- LocalStack (AWS services emulator) on port 4566
+- SES verifier (configures email verification in LocalStack)
 
 2. Restore NuGet packages:
 ```bash
@@ -39,15 +41,23 @@ cd BookingService/BookingService.Api
 dotnet run
 ```
 
-The APIs will be available at the ports configured in their respective `launchSettings.json` files (typically `http://localhost:5000` for EventService and `http://localhost:5001` for BookingService).
+The APIs will be available at:
+- EventService: `http://localhost:5000`
+- BookingService: `http://localhost:5001`
+
+Ports are configured in `Properties/launchSettings.json` files for each API project.
 
 ## Verify
 
-1. Check MongoDB is running:
+1. Check Docker services are running:
 ```bash
 docker ps
 ```
-You should see `database-service-container` and `mongo-express-container` running.
+You should see:
+- `database-service-container` (MongoDB)
+- `mongo-express-container` (Mongo Express)
+- `localstack-container` (LocalStack)
+- `ses-verifier-container` (SES verifier - runs once and exits)
 
 2. Access Mongo Express:
 Open `http://localhost:8081` in your browser to view the database.
@@ -81,15 +91,17 @@ Should return: `Healthy`
 **MongoDB connection fails:**
 - Verify Docker services are running: `docker compose ps`
 - Check connection string in `appsettings.json` matches Docker service hostname (`mongo`)
-- If running outside Docker, update connection string to `mongodb://localhost:27017`
+- Default connection string: `mongodb://mongo:27017` (for Docker) or `mongodb://localhost:27017` (for local)
+- Database name: `events-management-solution`
+- Credentials: username `user123`, password `password123`
 
 **Port already in use:**
-- Change ports in `launchSettings.json` or `compose.yaml`
+- Change ports in `Properties/launchSettings.json` or `compose.yaml`
 - Stop conflicting services
 
 **Build errors:**
 - Run `dotnet clean` and `dotnet restore`
-- Verify .NET SDK version: `dotnet --version` (should be 9.0+)
+- Verify .NET SDK version: `dotnet --version` (should be 9.0)
 
 ### Logs
 

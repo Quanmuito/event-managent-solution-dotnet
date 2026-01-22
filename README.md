@@ -2,7 +2,7 @@
 
 ### Description
 
-This is an ongoing project for learning purpose to get an understand on <strong>microservices</strong> and learn to use <strong>C#</strong> with <strong>.NET Core</strong>.
+This is an on-going project for learning purpose to get an understand on <strong>microservices</strong> and learn to use <strong>C#</strong> with <strong>.NET Core</strong>.
 
 ### User Stories
 
@@ -46,6 +46,7 @@ This is an ongoing project for learning purpose to get an understand on <strong>
 ### Identify Microservices
 
 - Database service ✅
+    - Store data as a single source of truth
 - Events service ✅
     - List all events
     - List all events based on profile’s preferences (e.g. language)
@@ -60,8 +61,7 @@ This is an ongoing project for learning purpose to get an understand on <strong>
     - Queue confirmation
     - QR code generation
 - Notification service ✅
-    - Send emails/SMS with specified content
-    - Send emails/SMS with pre-defined templates
+    - Send emails/SMS with specified content and pre-defined templates
 - Queue service
     - Get queue length
     - Enqueue
@@ -71,7 +71,70 @@ This is an ongoing project for learning purpose to get an understand on <strong>
     - Authentication
     - Authorization
 
-### Language and tools
-- .NET Core 9.0
-- MongoDB
-- Docker
+### Project Architecture Overview
+#### More details in [architecture.md](.docs/architecture.md)
+
+```mermaid
+graph TB
+    subgraph Layer0["Layer 0: Foundation"]
+        DatabaseService[DatabaseService]
+        AspNet_Common[AspNet.Common]
+        AWSService[AWSService]
+        Ems_Common[Ems.Common]
+    end
+
+    subgraph Layer1["Layer 1: Infrastructure Services"]
+        NotificationService[NotificationService]
+        EventService_Data[EventService.Data]
+        BookingService_Data[BookingService.Data]
+    end
+
+    subgraph Layer2["Layer 2: API Services"]
+        EventService_Api[EventService.Api]
+        BookingService_Api[BookingService.Api]
+    end
+
+    NotificationService --> AWSService
+    NotificationService --> Ems_Common
+    EventService_Data --> DatabaseService
+    BookingService_Data --> DatabaseService
+
+    EventService_Api --> AspNet_Common
+    EventService_Api --> Ems_Common
+    EventService_Api --> DatabaseService
+    EventService_Api --> EventService_Data
+
+    BookingService_Api --> AspNet_Common
+    BookingService_Api --> Ems_Common
+    BookingService_Api --> DatabaseService
+    BookingService_Api --> AWSService
+    BookingService_Api --> NotificationService
+    BookingService_Api --> EventService_Data
+    BookingService_Api --> BookingService_Data
+
+    style DatabaseService fill:#0052a3
+    style AspNet_Common fill:#b8860b
+    style AWSService fill:#ff8c00
+    style NotificationService fill:#e65100
+    style Ems_Common fill:#b8860b
+    style EventService_Data fill:#1b5e20
+    style EventService_Api fill:#1b5e20
+    style BookingService_Data fill:#6a1b9a
+    style BookingService_Api fill:#6a1b9a
+
+    linkStyle 0 stroke:#e65100,stroke-width:2px
+    linkStyle 1 stroke:#e65100,stroke-width:2px
+    linkStyle 2 stroke:#1b5e20,stroke-width:2px
+    linkStyle 3 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 4 stroke:#1b5e20,stroke-width:2px
+    linkStyle 5 stroke:#1b5e20,stroke-width:2px
+    linkStyle 6 stroke:#1b5e20,stroke-width:2px
+    linkStyle 7 stroke:#1b5e20,stroke-width:2px
+    linkStyle 8 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 9 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 10 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 11 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 12 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 13 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 14 stroke:#6a1b9a,stroke-width:2px
+```
