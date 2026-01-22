@@ -1,15 +1,16 @@
 namespace BookingService.Api.Tests.Services.HandleNotificationService;
 
-using System.Collections.Generic;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using BookingService.Api.Utils;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
-using Ems.Common.Messages;
-using NotificationService.Services;
 using EventService.Data.Models;
 using EventService.Data.Repositories;
+using NotificationService.Messages;
+using NotificationService.Services;
+using TestUtilities.Helpers;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -47,7 +48,7 @@ public class BookingPhoneNotificationTaskProcessorTests
 
         _mockEventRepository.Verify(x => x.GetByIdAsync(booking.EventId, It.IsAny<CancellationToken>()), Times.Once);
         _mockPhoneService.Verify(x => x.SendAsync(booking.Phone, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        VerifyLogInformation("Processing phone notification for Operation: {Operation}");
+        LoggerTestHelper.VerifyLogInformation(_mockLogger, "Processing phone notification for Operation: {Operation}");
     }
 
     [Fact]
@@ -65,7 +66,7 @@ public class BookingPhoneNotificationTaskProcessorTests
 
         _mockEventRepository.Verify(x => x.GetByIdAsync(booking.EventId, It.IsAny<CancellationToken>()), Times.Once);
         _mockPhoneService.Verify(x => x.SendAsync(booking.Phone, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        VerifyLogInformation("Processing phone notification for Operation: {Operation}");
+        LoggerTestHelper.VerifyLogInformation(_mockLogger, "Processing phone notification for Operation: {Operation}");
     }
 
     [Fact]
@@ -82,8 +83,8 @@ public class BookingPhoneNotificationTaskProcessorTests
 
         _mockEventRepository.Verify(x => x.GetByIdAsync(booking.EventId, It.IsAny<CancellationToken>()), Times.Once);
         _mockPhoneService.Verify(x => x.SendAsync(booking.Phone, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        VerifyLogWarning("Failed to fetch event details for EventId: {EventId}");
-        VerifyLogInformation("Processing phone notification for Operation: {Operation}");
+        LoggerTestHelper.VerifyLogWarning(_mockLogger, "Failed to fetch event details for EventId: {EventId}");
+        LoggerTestHelper.VerifyLogInformation(_mockLogger, "Processing phone notification for Operation: {Operation}");
     }
 
     private static Event CreateEvent(string id)
@@ -99,31 +100,5 @@ public class BookingPhoneNotificationTaskProcessorTests
             TimeEnd = DateTime.UtcNow.AddDays(2),
             CreatedAt = DateTime.UtcNow
         };
-    }
-
-    private void VerifyLogInformation(string messageTemplate)
-    {
-        var prefix = messageTemplate.Split('{')[0];
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(prefix)),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
-    }
-
-    private void VerifyLogWarning(string messageTemplate)
-    {
-        var prefix = messageTemplate.Split('{')[0];
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(prefix)),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
     }
 }

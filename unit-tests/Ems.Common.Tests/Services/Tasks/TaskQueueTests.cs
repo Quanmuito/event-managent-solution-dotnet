@@ -1,8 +1,8 @@
 namespace Ems.Common.Tests.Services.Tasks;
 
-using System.Threading.Channels;
 using FluentAssertions;
 using Ems.Common.Services.Tasks;
+using Ems.Common.Tests.Helpers;
 using Xunit;
 
 public class TaskQueueTests
@@ -10,7 +10,7 @@ public class TaskQueueTests
     [Fact]
     public async Task EnqueueAsync_WithValidMessage_ShouldWriteToChannel()
     {
-        var channel = Channel.CreateUnbounded<string>();
+        var channel = TaskServiceTestHelper.CreateUnboundedChannel<string>();
         var queue = new TaskQueue<string>(channel.Writer);
         var message = "test-message";
 
@@ -23,11 +23,7 @@ public class TaskQueueTests
     [Fact]
     public async Task EnqueueAsync_WhenChannelFull_ShouldWaitOrBlock()
     {
-        var options = new BoundedChannelOptions(1)
-        {
-            FullMode = BoundedChannelFullMode.Wait
-        };
-        var channel = Channel.CreateBounded<string>(options);
+        var channel = TaskServiceTestHelper.CreateBoundedChannel<string>(1);
         var queue = new TaskQueue<string>(channel.Writer);
 
         await queue.EnqueueAsync("message1", CancellationToken.None);
@@ -43,7 +39,7 @@ public class TaskQueueTests
     [Fact]
     public async Task EnqueueAsync_WithCancellation_ShouldCancelOperation()
     {
-        var channel = Channel.CreateUnbounded<string>();
+        var channel = TaskServiceTestHelper.CreateUnboundedChannel<string>();
         var queue = new TaskQueue<string>(channel.Writer);
         var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -56,7 +52,7 @@ public class TaskQueueTests
     [Fact]
     public async Task EnqueueAsync_MultipleMessages_ShouldEnqueueInOrder()
     {
-        var channel = Channel.CreateUnbounded<string>();
+        var channel = TaskServiceTestHelper.CreateUnboundedChannel<string>();
         var queue = new TaskQueue<string>(channel.Writer);
 
         await queue.EnqueueAsync("message1", CancellationToken.None);

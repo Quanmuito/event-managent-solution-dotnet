@@ -1,28 +1,15 @@
 namespace DatabaseService.Tests;
 
-using DatabaseService;
-using DatabaseService.Settings;
+using DatabaseService.Tests.Helpers;
 using FluentAssertions;
-using Microsoft.Extensions.Options;
 using Xunit;
 
 public class MongoDbContextTests
 {
-    private static MongoDbContext CreateMongoDbContext()
-    {
-        var settings = new MongoDbSettings
-        {
-            ConnectionString = "mongodb://localhost:27017",
-            DatabaseName = "test-db"
-        };
-        var options = Options.Create(settings);
-        return new MongoDbContext(options);
-    }
-
     [Fact]
     public void GetCollection_ShouldReturnCollectionWithCorrectName()
     {
-        var context = CreateMongoDbContext();
+        var context = TestDataBuilder.CreateMongoDbContext();
 
         var collection = context.GetCollection<TestDocument>("TestCollection");
 
@@ -33,7 +20,7 @@ public class MongoDbContextTests
     [Fact]
     public void GetCollection_ShouldReturnCollectionWithCorrectType()
     {
-        var context = CreateMongoDbContext();
+        var context = TestDataBuilder.CreateMongoDbContext();
 
         var collection = context.GetCollection<TestDocument>("TestCollection");
 
@@ -44,7 +31,7 @@ public class MongoDbContextTests
     [Fact]
     public void GetCollection_ShouldReturnDifferentCollectionsForDifferentNames()
     {
-        var context = CreateMongoDbContext();
+        var context = TestDataBuilder.CreateMongoDbContext();
 
         var collection1 = context.GetCollection<TestDocument>("Collection1");
         var collection2 = context.GetCollection<TestDocument>("Collection2");

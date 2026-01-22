@@ -13,7 +13,13 @@ public static class ValidationTestHelper
     {
         var validationContext = new ValidationContext(instance!);
         var results = new List<ValidationResult>();
-        var isValid = Validator.TryValidateObject(instance!, validationContext, results, true);
+        Validator.TryValidateObject(instance!, validationContext, results, true);
+        if (instance is IValidatableObject validatable)
+        {
+            var customResults = validatable.Validate(validationContext);
+            results.AddRange(customResults);
+        }
+        var isValid = results.Count == 0;
         return (isValid, results);
     }
 }

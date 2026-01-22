@@ -1,16 +1,20 @@
 namespace Ems.Common.Tests.Helpers;
 
 using System.Threading.Channels;
-using Ems.Common.Services.Tasks;
 
 public static class TaskServiceTestHelper
 {
-    public static (ChannelReader<T>, ChannelWriter<T>) CreateTestChannel<T>(int capacity = 1000)
+    public static Channel<T> CreateUnboundedChannel<T>()
     {
-        var channel = Channel.CreateBounded<T>(new BoundedChannelOptions(capacity)
+        return Channel.CreateUnbounded<T>();
+    }
+
+    public static Channel<T> CreateBoundedChannel<T>(int capacity, BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait)
+    {
+        var options = new BoundedChannelOptions(capacity)
         {
-            FullMode = BoundedChannelFullMode.Wait
-        });
-        return (channel.Reader, channel.Writer);
+            FullMode = fullMode
+        };
+        return Channel.CreateBounded<T>(options);
     }
 }

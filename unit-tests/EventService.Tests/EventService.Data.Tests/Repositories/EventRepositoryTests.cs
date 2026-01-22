@@ -10,18 +10,48 @@ using MongoDB.Driver;
 using Moq;
 using Xunit;
 
-public class EventRepositoryTests
+public class EventRepositoryTests : RepositoryTestBase<Event, EventRepository>
 {
-    private readonly Mock<MongoDbContext> _mockMongoDbContext;
-    private readonly Mock<IMongoCollection<Event>> _mockCollection;
-    private readonly EventRepository _repository;
-
-    public EventRepositoryTests()
+    protected override string GetCollectionName()
     {
-        (_mockMongoDbContext, _) = MongoDbContextTestHelper.SetupMongoDbContext();
-        _mockCollection = new Mock<IMongoCollection<Event>>(MockBehavior.Loose);
-        _mockMongoDbContext.Setup(x => x.GetCollection<Event>("Events")).Returns(_mockCollection.Object);
-        _repository = new EventRepository(_mockMongoDbContext.Object);
+        return "Events";
+    }
+
+    protected override EventRepository CreateRepository(MongoDbContext mongoDbContext)
+    {
+        return new EventRepository(mongoDbContext);
+    }
+
+    protected override Event CreateEntity(string? id = null)
+    {
+        return TestDataBuilder.CreateEvent(id);
+    }
+
+    protected override string GetValidEntityId()
+    {
+        return "507f1f77bcf86cd799439011";
+    }
+
+    protected override string GetNonExistentEntityId()
+    {
+        return "507f1f77bcf86cd799439999";
+    }
+
+    protected override UpdateDefinition<Event> CreateUpdateDefinition(Event entity)
+    {
+        return Builders<Event>.Update.Set(e => e.Title, entity.Title);
+    }
+
+    protected override void AssertEntityMatches(Event actual, Event expected)
+    {
+        base.AssertEntityMatches(actual, expected);
+        actual.Id.Should().Be(expected.Id);
+        actual.Title.Should().Be(expected.Title);
+    }
+
+    protected override bool AssertEntityEquals(Event actual, Event expected)
+    {
+        return actual.Id == expected.Id && actual.Title == expected.Title;
     }
 
     [Fact]
@@ -32,9 +62,9 @@ public class EventRepositoryTests
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011"),
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439012")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync(null, CancellationToken.None);
+        var result = await Repository.SearchAsync(null, CancellationToken.None);
 
         result.Should().HaveCount(2);
         result.Should().BeEquivalentTo(events);
@@ -47,9 +77,9 @@ public class EventRepositoryTests
         {
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync("   ", CancellationToken.None);
+        var result = await Repository.SearchAsync("   ", CancellationToken.None);
 
         result.Should().HaveCount(1);
     }
@@ -61,9 +91,9 @@ public class EventRepositoryTests
         {
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync("\t\n", CancellationToken.None);
+        var result = await Repository.SearchAsync("\t\n", CancellationToken.None);
 
         result.Should().HaveCount(1);
     }
@@ -75,12 +105,12 @@ public class EventRepositoryTests
         {
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011", "Test Event", "Test details")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync("Test", CancellationToken.None);
+        var result = await Repository.SearchAsync("Test", CancellationToken.None);
 
         result.Should().HaveCount(1);
-        _mockCollection.Verify(x => x.FindAsync(
+        MockCollection.Verify(x => x.FindAsync(
             It.IsAny<FilterDefinition<Event>>(),
             It.IsAny<FindOptions<Event, Event>>(),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -94,9 +124,9 @@ public class EventRepositoryTests
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011", "Event One", "Details"),
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439012", "Event Two", "More details")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync("One, Two", CancellationToken.None);
+        var result = await Repository.SearchAsync("One, Two", CancellationToken.None);
 
         result.Should().HaveCount(2);
     }
@@ -108,9 +138,9 @@ public class EventRepositoryTests
         {
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011", "Test Event", "Details")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync(" Test , Event ", CancellationToken.None);
+        var result = await Repository.SearchAsync(" Test , Event ", CancellationToken.None);
 
         result.Should().HaveCount(1);
     }
@@ -122,9 +152,9 @@ public class EventRepositoryTests
         {
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync(",,,", CancellationToken.None);
+        var result = await Repository.SearchAsync(",,,", CancellationToken.None);
 
         result.Should().HaveCount(1);
     }
@@ -136,9 +166,9 @@ public class EventRepositoryTests
         {
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011", "Test (Event)", "Details")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync("(Event)", CancellationToken.None);
+        var result = await Repository.SearchAsync("(Event)", CancellationToken.None);
 
         result.Should().HaveCount(1);
     }
@@ -150,9 +180,9 @@ public class EventRepositoryTests
         {
             TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011", "Test Event", "Details")
         };
-        MongoDbMockHelper.SetupFindToListAsync(_mockCollection, events);
+        MongoDbMockHelper.SetupFindToListAsync(MockCollection, events);
 
-        var result = await _repository.SearchAsync("TEST", CancellationToken.None);
+        var result = await Repository.SearchAsync("TEST", CancellationToken.None);
 
         result.Should().HaveCount(1);
     }

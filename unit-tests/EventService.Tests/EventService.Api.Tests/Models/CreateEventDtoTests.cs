@@ -18,32 +18,26 @@ public class CreateEventDtoTests
         results.Should().BeEmpty();
     }
 
-    [Fact]
-    public void Validate_WithTimeStartAfterTimeEnd_ShouldReturnValidationError()
-    {
-        var dto = TestDataBuilder.CreateInvalidCreateEventDto();
-        var validationContext = ValidationTestHelper.CreateValidationContext(dto);
-
-        var results = dto.Validate(validationContext).ToList();
-
-        results.Should().HaveCount(1);
-        results[0].ErrorMessage.Should().Be("TimeStart must be before TimeEnd.");
-        results[0].MemberNames.Should().Contain("TimeStart");
-        results[0].MemberNames.Should().Contain("TimeEnd");
-    }
-
-    [Fact]
-    public void Validate_WithTimeStartEqualToTimeEnd_ShouldReturnValidationError()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Validate_WithInvalidTimeRange_ShouldReturnValidationError(bool equalTimes)
     {
         var dto = TestDataBuilder.CreateValidCreateEventDto();
-        dto.TimeStart = DateTime.UtcNow;
-        dto.TimeEnd = dto.TimeStart;
+        var now = DateTime.UtcNow;
+        dto.TimeStart = now;
+        dto.TimeEnd = equalTimes ? now : now.AddDays(-1);
         var validationContext = ValidationTestHelper.CreateValidationContext(dto);
 
         var results = dto.Validate(validationContext).ToList();
 
         results.Should().HaveCount(1);
         results[0].ErrorMessage.Should().Be("TimeStart must be before TimeEnd.");
+        if (!equalTimes)
+        {
+            results[0].MemberNames.Should().Contain("TimeStart");
+            results[0].MemberNames.Should().Contain("TimeEnd");
+        }
     }
 
     [Fact]
@@ -76,7 +70,8 @@ public class CreateEventDtoTests
         var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
 
         isValid.Should().BeFalse();
-        results.Should().Contain(r => r.ErrorMessage == "The HostedBy field is required." || r.ErrorMessage == "HostedBy must be between 1 and 100 characters.");
+        results.Should().Contain(r => r.ErrorMessage == "The HostedBy field is required." ||
+                                      r.ErrorMessage == "HostedBy must be between 1 and 100 characters.");
     }
 
     [Fact]

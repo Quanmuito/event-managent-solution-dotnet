@@ -1,13 +1,14 @@
 namespace NotificationService.Tests.Services;
 
+using AWSService.Settings;
+using NotificationService.Services;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using FluentAssertions;
 using Moq;
-using NotificationService.Services;
-using AWSService.Settings;
+using TestUtilities.Helpers;
 using Xunit;
 
 public class EmailServiceTests
@@ -113,14 +114,7 @@ public class EmailServiceTests
 
         await act.Should().ThrowAsync<Exception>().WithMessage("SES Error");
 
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.Once);
+        LoggerTestHelper.VerifyLogError(_mockLogger);
     }
 
     [Fact]
@@ -173,14 +167,7 @@ public class EmailServiceTests
 
         await _emailService.SendAsync(recipient, subject, content, CancellationToken.None);
 
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.Once);
+        LoggerTestHelper.VerifyLogInformation(_mockLogger);
     }
 
     [Fact]

@@ -8,6 +8,23 @@ using Xunit;
 
 public class UpdateEventDtoTests
 {
+    private static UpdateEventDto CreateDto(
+        string? title = null,
+        string? hostedBy = null,
+        string? details = null,
+        DateTime? timeStart = null,
+        DateTime? timeEnd = null)
+    {
+        return new UpdateEventDto
+        {
+            Title = title,
+            HostedBy = hostedBy,
+            Details = details,
+            TimeStart = timeStart,
+            TimeEnd = timeEnd
+        };
+    }
+
     [Fact]
     public void Validate_WithValidDto_ShouldReturnNoValidationErrors()
     {
@@ -33,40 +50,18 @@ public class UpdateEventDtoTests
         results[0].MemberNames.Should().Contain("TimeEnd");
     }
 
-    [Fact]
-    public void Validate_WithOnlyTimeStart_ShouldReturnNoValidationErrors()
+    [Theory]
+    [InlineData("TimeStart")]
+    [InlineData("TimeEnd")]
+    [InlineData("Title")]
+    public void Validate_WithPartialUpdate_ShouldReturnNoValidationErrors(string property)
     {
-        var dto = new UpdateEventDto
+        var dto = property switch
         {
-            TimeStart = DateTime.UtcNow.AddDays(1)
-        };
-        var validationContext = ValidationTestHelper.CreateValidationContext(dto);
-
-        var results = dto.Validate(validationContext);
-
-        results.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Validate_WithOnlyTimeEnd_ShouldReturnNoValidationErrors()
-    {
-        var dto = new UpdateEventDto
-        {
-            TimeEnd = DateTime.UtcNow.AddDays(2)
-        };
-        var validationContext = ValidationTestHelper.CreateValidationContext(dto);
-
-        var results = dto.Validate(validationContext);
-
-        results.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Validate_WithPartialUpdate_ShouldReturnNoValidationErrors()
-    {
-        var dto = new UpdateEventDto
-        {
-            Title = "Updated Title"
+            "TimeStart" => CreateDto(timeStart: DateTime.UtcNow.AddDays(1)),
+            "TimeEnd" => CreateDto(timeEnd: DateTime.UtcNow.AddDays(2)),
+            "Title" => CreateDto(title: "Updated Title"),
+            _ => new UpdateEventDto()
         };
         var validationContext = ValidationTestHelper.CreateValidationContext(dto);
 
@@ -78,10 +73,7 @@ public class UpdateEventDtoTests
     [Fact]
     public void Validate_WithTitleTooShort_ShouldReturnValidationError()
     {
-        var dto = new UpdateEventDto
-        {
-            Title = "AB"
-        };
+        var dto = CreateDto(title: "AB");
         var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
 
         isValid.Should().BeFalse();
@@ -91,10 +83,7 @@ public class UpdateEventDtoTests
     [Fact]
     public void Validate_WithTitleTooLong_ShouldReturnValidationError()
     {
-        var dto = new UpdateEventDto
-        {
-            Title = new string('A', 201)
-        };
+        var dto = CreateDto(title: new string('A', 201));
         var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
 
         isValid.Should().BeFalse();
@@ -102,12 +91,19 @@ public class UpdateEventDtoTests
     }
 
     [Fact]
+    public void Validate_WithNullTitle_ShouldReturnNoValidationError()
+    {
+        var dto = CreateDto(title: null);
+        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
+
+        isValid.Should().BeTrue();
+        results.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Validate_WithHostedByTooShort_ShouldReturnValidationError()
     {
-        var dto = new UpdateEventDto
-        {
-            HostedBy = ""
-        };
+        var dto = CreateDto(hostedBy: "");
         var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
 
         isValid.Should().BeFalse();
@@ -117,10 +113,7 @@ public class UpdateEventDtoTests
     [Fact]
     public void Validate_WithHostedByTooLong_ShouldReturnValidationError()
     {
-        var dto = new UpdateEventDto
-        {
-            HostedBy = new string('A', 101)
-        };
+        var dto = CreateDto(hostedBy: new string('A', 101));
         var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
 
         isValid.Should().BeFalse();
@@ -130,26 +123,10 @@ public class UpdateEventDtoTests
     [Fact]
     public void Validate_WithDetailsTooLong_ShouldReturnValidationError()
     {
-        var dto = new UpdateEventDto
-        {
-            Details = new string('A', 2001)
-        };
+        var dto = CreateDto(details: new string('A', 2001));
         var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
 
         isValid.Should().BeFalse();
         results.Should().Contain(r => r.ErrorMessage == "Details cannot exceed 2000 characters.");
-    }
-
-    [Fact]
-    public void Validate_WithNullTitle_ShouldReturnNoValidationError()
-    {
-        var dto = new UpdateEventDto
-        {
-            Title = null
-        };
-        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
-
-        isValid.Should().BeTrue();
-        results.Should().BeEmpty();
     }
 }

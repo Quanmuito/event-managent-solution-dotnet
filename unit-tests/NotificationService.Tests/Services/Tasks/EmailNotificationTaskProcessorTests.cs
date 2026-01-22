@@ -1,22 +1,28 @@
-namespace Ems.Common.Tests.Services.Tasks;
+namespace NotificationService.Tests.Services.Tasks;
 
-using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Ems.Common.Messages;
-using Ems.Common.Services.Tasks;
+using NotificationService.Messages;
 using NotificationService.Services;
+using NotificationService.Services.Tasks;
+using Microsoft.Extensions.Logging;
+using FluentAssertions;
+using Moq;
 using Xunit;
 
 public class EmailNotificationTaskProcessorTests
 {
-    [Fact]
-    public async Task ProcessAsync_ShouldCallGetRecipient()
+    private static (TestEmailNotificationTaskProcessor processor, Mock<IEmailService> mockEmailService, EmailNotificationTaskMessage<string> message) CreateTestSetup()
     {
         var mockEmailService = new Mock<IEmailService>();
         var mockLogger = new Mock<ILogger<TestEmailNotificationTaskProcessor>>();
         var processor = new TestEmailNotificationTaskProcessor(mockEmailService.Object, mockLogger.Object);
         var message = new EmailNotificationTaskMessage<string>("test-data", "create");
+        return (processor, mockEmailService, message);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ShouldCallGetRecipient()
+    {
+        var (processor, _, message) = CreateTestSetup();
 
         await processor.ProcessAsync(message, CancellationToken.None);
 
@@ -27,10 +33,7 @@ public class EmailNotificationTaskProcessorTests
     [Fact]
     public async Task ProcessAsync_ShouldCallComposeContent()
     {
-        var mockEmailService = new Mock<IEmailService>();
-        var mockLogger = new Mock<ILogger<TestEmailNotificationTaskProcessor>>();
-        var processor = new TestEmailNotificationTaskProcessor(mockEmailService.Object, mockLogger.Object);
-        var message = new EmailNotificationTaskMessage<string>("test-data", "create");
+        var (processor, _, message) = CreateTestSetup();
 
         await processor.ProcessAsync(message, CancellationToken.None);
 
@@ -40,10 +43,7 @@ public class EmailNotificationTaskProcessorTests
     [Fact]
     public async Task ProcessAsync_ShouldCallSendEmail()
     {
-        var mockEmailService = new Mock<IEmailService>();
-        var mockLogger = new Mock<ILogger<TestEmailNotificationTaskProcessor>>();
-        var processor = new TestEmailNotificationTaskProcessor(mockEmailService.Object, mockLogger.Object);
-        var message = new EmailNotificationTaskMessage<string>("test-data", "create");
+        var (processor, mockEmailService, message) = CreateTestSetup();
 
         await processor.ProcessAsync(message, CancellationToken.None);
 
@@ -57,10 +57,7 @@ public class EmailNotificationTaskProcessorTests
     [Fact]
     public async Task ProcessAsync_ShouldCallHandleBusinessLogic()
     {
-        var mockEmailService = new Mock<IEmailService>();
-        var mockLogger = new Mock<ILogger<TestEmailNotificationTaskProcessor>>();
-        var processor = new TestEmailNotificationTaskProcessor(mockEmailService.Object, mockLogger.Object);
-        var message = new EmailNotificationTaskMessage<string>("test-data", "create");
+        var (processor, _, message) = CreateTestSetup();
 
         await processor.ProcessAsync(message, CancellationToken.None);
 
@@ -70,12 +67,9 @@ public class EmailNotificationTaskProcessorTests
     [Fact]
     public async Task ProcessAsync_WhenEmailServiceThrows_ShouldThrow()
     {
-        var mockEmailService = new Mock<IEmailService>();
+        var (processor, mockEmailService, message) = CreateTestSetup();
         mockEmailService.Setup(x => x.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Email error"));
-        var mockLogger = new Mock<ILogger<TestEmailNotificationTaskProcessor>>();
-        var processor = new TestEmailNotificationTaskProcessor(mockEmailService.Object, mockLogger.Object);
-        var message = new EmailNotificationTaskMessage<string>("test-data", "create");
 
         var act = async () => await processor.ProcessAsync(message, CancellationToken.None);
 
@@ -83,17 +77,12 @@ public class EmailNotificationTaskProcessorTests
     }
 }
 
-public class TestEmailNotificationTaskProcessor : EmailNotificationTaskProcessor<string>
+public class TestEmailNotificationTaskProcessor(IEmailService emailService, ILogger<TestEmailNotificationTaskProcessor> logger) : EmailNotificationTaskProcessor<string>(emailService, logger)
 {
     public bool GetRecipientCalled { get; private set; }
     public bool ComposeContentCalled { get; private set; }
     public bool HandleBusinessLogicCalled { get; private set; }
     public string? LastRecipient { get; private set; }
-
-    public TestEmailNotificationTaskProcessor(IEmailService emailService, ILogger<TestEmailNotificationTaskProcessor> logger)
-        : base(emailService, logger)
-    {
-    }
 
     protected override string GetRecipient(string data)
     {

@@ -1,13 +1,12 @@
 namespace AWSService.Tests.Services;
 
+using AWSService.Services;
+using AWSService.Settings;
+using AWSService.Tests.Helpers;
 using Amazon;
 using Amazon.Runtime;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using Moq;
-using AWSService.Services;
-using AWSService.Settings;
-using AWSService.Tests.Helpers;
 using Xunit;
 
 public class AWSClientFactoryBaseTests
@@ -16,7 +15,7 @@ public class AWSClientFactoryBaseTests
     public void CreateClient_CallsCreateClientCore_WithCorrectConfig()
     {
         var settings = AWSTestHelper.CreateTestAWSSESSettings();
-        var options = Options.Create(settings);
+        var options = AWSTestHelper.CreateOptions(settings);
         var testFactory = new TestAWSClientFactory(options);
 
         var client = testFactory.CreateClient();
@@ -30,9 +29,8 @@ public class AWSClientFactoryBaseTests
     public void CreateClient_WithServiceUrl_PassesToConfig()
     {
         var serviceUrl = "http://localhost:4566";
-        var settings = AWSTestHelper.CreateTestAWSSESSettings();
-        settings.ServiceURL = serviceUrl;
-        var options = Options.Create(settings);
+        var settings = AWSTestHelper.CreateTestAWSSESSettings(serviceUrl: serviceUrl);
+        var options = AWSTestHelper.CreateOptions(settings);
         var testFactory = new TestAWSClientFactory(options);
 
         var client = testFactory.CreateClient();
@@ -46,9 +44,8 @@ public class AWSClientFactoryBaseTests
     public void CreateClient_WithRegion_ConfiguresRegionEndpoint()
     {
         var region = "eu-west-1";
-        var settings = AWSTestHelper.CreateTestAWSSESSettings();
-        settings.Region = region;
-        var options = Options.Create(settings);
+        var settings = AWSTestHelper.CreateTestAWSSESSettings(region: region);
+        var options = AWSTestHelper.CreateOptions(settings);
         var testFactory = new TestAWSClientFactory(options);
 
         var client = testFactory.CreateClient();
@@ -61,10 +58,8 @@ public class AWSClientFactoryBaseTests
     [Fact]
     public void CreateClient_WithCredentials_PassesToCreateClientCore()
     {
-        var settings = AWSTestHelper.CreateTestAWSSESSettings();
-        settings.AccessKey = "test-key";
-        settings.SecretKey = "test-secret";
-        var options = Options.Create(settings);
+        var settings = AWSTestHelper.CreateTestAWSSESSettings(accessKey: "test-key", secretKey: "test-secret");
+        var options = AWSTestHelper.CreateOptions(settings);
         var testFactory = new TestAWSClientFactory(options);
 
         var client = testFactory.CreateClient();
@@ -75,16 +70,12 @@ public class AWSClientFactoryBaseTests
     }
 }
 
-public class TestAWSClientFactory : AWSClientFactoryBase<TestClient, TestConfig, AWSSESSettings>
+public class TestAWSClientFactory(IOptions<AWSSESSettings> settings) : AWSClientFactoryBase<TestClient, TestConfig, AWSSESSettings>(settings)
 {
     public bool CreateClientCoreCalled { get; private set; }
     public TestConfig? LastConfig { get; private set; }
     public string? LastAccessKey { get; private set; }
     public string? LastSecretKey { get; private set; }
-
-    public TestAWSClientFactory(IOptions<AWSSESSettings> settings) : base(settings)
-    {
-    }
 
     protected override TestClient CreateClientCore(TestConfig config, string? accessKey, string? secretKey)
     {

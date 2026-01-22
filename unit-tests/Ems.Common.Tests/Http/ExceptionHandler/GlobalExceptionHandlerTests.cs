@@ -1,14 +1,13 @@
 namespace Ems.Common.Tests.Http.ExceptionHandler;
 
+using Ems.Common.Http.ExceptionHandler;
+using Ems.Common.Http.Responses.Errors;
+using Ems.Common.Tests.Helpers;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Ems.Common.Http.ExceptionHandler;
-using Ems.Common.Http.Responses.Errors;
 using Xunit;
 
 public class GlobalExceptionHandlerTests
@@ -22,103 +21,79 @@ public class GlobalExceptionHandlerTests
         _handler = new GlobalExceptionHandler(_mockLogger.Object);
     }
 
-    [Fact]
-    public async Task TryHandleAsync_WithKeyNotFoundException_ShouldReturn404()
+    [Theory]
+    [MemberData(nameof(ExceptionHandlingTestCases))]
+    public async Task TryHandleAsync_WithException_ShouldReturnExpectedResponse(
+        Exception exception,
+        int expectedStatusCode,
+        string expectedErrorCode,
+        string expectedMessage)
     {
-        var httpContext = CreateHttpContext();
-        var exception = new KeyNotFoundException("Not found");
+        var httpContext = HttpContextTestHelper.CreateHttpContext();
 
         var result = await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
 
         result.Should().BeTrue();
-        httpContext.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
-        var response = await GetResponseBody<ErrorResponse>(httpContext);
-        response.ErrorCode.Should().Be(ErrorCodes.NotFound);
-        response.Message.Should().Be("Not found");
+        httpContext.Response.StatusCode.Should().Be(expectedStatusCode);
+        var response = await HttpContextTestHelper.GetResponseBody<ErrorResponse>(httpContext);
+        response.ErrorCode.Should().Be(expectedErrorCode);
+        response.Message.Should().Be(expectedMessage);
     }
 
-    [Fact]
-    public async Task TryHandleAsync_WithFormatException_ShouldReturn400()
+    public static IEnumerable<object[]> ExceptionHandlingTestCases()
     {
-        var httpContext = CreateHttpContext();
-        var exception = new FormatException("Invalid format");
-
-        var result = await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
-
-        result.Should().BeTrue();
-        httpContext.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-        var response = await GetResponseBody<ErrorResponse>(httpContext);
-        response.ErrorCode.Should().Be(ErrorCodes.FormatError);
-        response.Message.Should().Be("Invalid format");
-    }
-
-    [Fact]
-    public async Task TryHandleAsync_WithArgumentException_ShouldReturn400()
-    {
-        var httpContext = CreateHttpContext();
-        var exception = new ArgumentException("Invalid argument");
-
-        var result = await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
-
-        result.Should().BeTrue();
-        httpContext.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-        var response = await GetResponseBody<ErrorResponse>(httpContext);
-        response.ErrorCode.Should().Be(ErrorCodes.InvalidArgument);
-        response.Message.Should().Be("Invalid argument");
-    }
-
-    [Fact]
-    public async Task TryHandleAsync_WithInvalidOperationException_ShouldReturn400()
-    {
-        var httpContext = CreateHttpContext();
-        var exception = new InvalidOperationException("Invalid operation");
-
-        var result = await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
-
-        result.Should().BeTrue();
-        httpContext.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
-        var response = await GetResponseBody<ErrorResponse>(httpContext);
-        response.ErrorCode.Should().Be(ErrorCodes.InvalidOperation);
-        response.Message.Should().Be("Invalid operation");
-    }
-
-    [Fact]
-    public async Task TryHandleAsync_WithUnhandledException_ShouldReturn500()
-    {
-        var httpContext = CreateHttpContext();
-        var exception = new Exception("Unexpected error");
-
-        var result = await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
-
-        result.Should().BeTrue();
-        httpContext.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
-        var response = await GetResponseBody<ErrorResponse>(httpContext);
-        response.ErrorCode.Should().Be(ErrorCodes.InternalError);
-        response.Message.Should().Be("An error occurred while processing the request.");
+        yield return new object[]
+        {
+            new KeyNotFoundException("Not found"),
+            StatusCodes.Status404NotFound,
+            ErrorCodes.NotFound,
+            "Not found"
+        };
+        yield return new object[]
+        {
+            new FormatException("Invalid format"),
+            StatusCodes.Status400BadRequest,
+            ErrorCodes.FormatError,
+            "Invalid format"
+        };
+        yield return new object[]
+        {
+            new ArgumentException("Invalid argument"),
+            StatusCodes.Status400BadRequest,
+            ErrorCodes.InvalidArgument,
+            "Invalid argument"
+        };
+        yield return new object[]
+        {
+            new InvalidOperationException("Invalid operation"),
+            StatusCodes.Status400BadRequest,
+            ErrorCodes.InvalidOperation,
+            "Invalid operation"
+        };
+        yield return new object[]
+        {
+            new Exception("Unexpected error"),
+            StatusCodes.Status500InternalServerError,
+            ErrorCodes.InternalError,
+            "An error occurred while processing the request."
+        };
     }
 
     [Fact]
     public async Task TryHandleAsync_ShouldLogError()
     {
-        var httpContext = CreateHttpContext();
+        var httpContext = HttpContextTestHelper.CreateHttpContext();
         var exception = new Exception("Test error");
 
         await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
 
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-            Times.Once);
+        LoggerTestHelper.VerifyErrorLogged(_mockLogger);
     }
 
     [Fact]
     public async Task TryHandleAsync_ShouldSetContentTypeToJson()
     {
-        var httpContext = CreateHttpContext();
+        var httpContext = HttpContextTestHelper.CreateHttpContext();
         var exception = new Exception("Test error");
 
         await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
@@ -129,50 +104,25 @@ public class GlobalExceptionHandlerTests
     [Fact]
     public async Task TryHandleAsync_ShouldIncludeTraceId()
     {
-        var httpContext = CreateHttpContext();
+        var httpContext = HttpContextTestHelper.CreateHttpContext();
         var exception = new Exception("Test error");
 
-        using var activitySource = new ActivitySource("Test");
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = _ => true,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData
-        };
-        ActivitySource.AddActivityListener(listener);
-
-        using var activity = activitySource.StartActivity("TestActivity");
-        activity?.SetIdFormat(ActivityIdFormat.W3C);
-        activity?.Start();
+        using var _ = ActivityTestHelper.CreateActivityWithTraceId();
 
         await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
 
-        var response = await GetResponseBody<ErrorResponse>(httpContext);
+        var response = await HttpContextTestHelper.GetResponseBody<ErrorResponse>(httpContext);
         response.TraceId.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public async Task TryHandleAsync_ShouldReturnTrue()
     {
-        var httpContext = CreateHttpContext();
+        var httpContext = HttpContextTestHelper.CreateHttpContext();
         var exception = new Exception("Test error");
 
         var result = await _handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
 
         result.Should().BeTrue();
-    }
-
-    private static DefaultHttpContext CreateHttpContext()
-    {
-        var httpContext = new DefaultHttpContext();
-        httpContext.Response.Body = new MemoryStream();
-        return httpContext;
-    }
-
-    private static async Task<T> GetResponseBody<T>(HttpContext httpContext)
-    {
-        httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
-        var reader = new StreamReader(httpContext.Response.Body);
-        var json = await reader.ReadToEndAsync();
-        return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
     }
 }

@@ -1,27 +1,61 @@
 namespace BookingService.Data.Tests.Repositories;
 
-using System.Collections.Generic;
 using BookingService.Data.Models;
 using BookingService.Data.Repositories;
 using DatabaseService;
 using TestUtilities.Helpers;
 using FluentAssertions;
 using MongoDB.Driver;
-using Moq;
 using Xunit;
 
-public class QrCodeRepositoryTests
+public class QrCodeRepositoryTests : RepositoryTestBase<QrCode, QrCodeRepository>
 {
-    private readonly Mock<MongoDbContext> _mockMongoDbContext;
-    private readonly Mock<IMongoCollection<QrCode>> _mockCollection;
-    private readonly QrCodeRepository _repository;
-
-    public QrCodeRepositoryTests()
+    protected override string GetCollectionName()
     {
-        (_mockMongoDbContext, _) = MongoDbContextTestHelper.SetupMongoDbContext();
-        _mockCollection = new Mock<IMongoCollection<QrCode>>(MockBehavior.Loose);
-        _mockMongoDbContext.Setup(x => x.GetCollection<QrCode>("QrCodes")).Returns(_mockCollection.Object);
-        _repository = new QrCodeRepository(_mockMongoDbContext.Object);
+        return "QrCodes";
+    }
+
+    protected override QrCodeRepository CreateRepository(MongoDbContext mongoDbContext)
+    {
+        return new QrCodeRepository(mongoDbContext);
+    }
+
+    protected override QrCode CreateEntity(string? id = null)
+    {
+        return new QrCode
+        {
+            Id = id ?? "507f1f77bcf86cd799439011",
+            BookingId = "507f1f77bcf86cd799439012",
+            QrCodeData = [1, 2, 3, 4, 5],
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    protected override string GetValidEntityId()
+    {
+        return "507f1f77bcf86cd799439011";
+    }
+
+    protected override string GetNonExistentEntityId()
+    {
+        return "507f1f77bcf86cd799439999";
+    }
+
+    protected override UpdateDefinition<QrCode> CreateUpdateDefinition(QrCode entity)
+    {
+        return Builders<QrCode>.Update.Set(q => q.BookingId, entity.BookingId);
+    }
+
+    protected override void AssertEntityMatches(QrCode actual, QrCode expected)
+    {
+        base.AssertEntityMatches(actual, expected);
+        actual.Id.Should().Be(expected.Id);
+        actual.BookingId.Should().Be(expected.BookingId);
+    }
+
+    protected override bool AssertEntityEquals(QrCode actual, QrCode expected)
+    {
+        return actual.Id == expected.Id && actual.BookingId == expected.BookingId;
     }
 
     [Fact]
@@ -35,9 +69,9 @@ public class QrCodeRepositoryTests
             QrCodeData = [1, 2, 3, 4, 5],
             CreatedAt = DateTime.UtcNow
         };
-        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, expectedQrCode);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, expectedQrCode);
 
-        var result = await _repository.GetByBookingIdAsync(bookingId, CancellationToken.None);
+        var result = await Repository.GetByBookingIdAsync(bookingId, CancellationToken.None);
 
         result.Should().NotBeNull();
         result!.BookingId.Should().Be(bookingId);
@@ -48,96 +82,10 @@ public class QrCodeRepositoryTests
     public async Task GetByBookingIdAsync_WithNonExistentBookingId_ShouldReturnNull()
     {
         var bookingId = "507f1f77bcf86cd799439999";
-        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, null);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, null);
 
-        var result = await _repository.GetByBookingIdAsync(bookingId, CancellationToken.None);
+        var result = await Repository.GetByBookingIdAsync(bookingId, CancellationToken.None);
 
         result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_WithValidId_ShouldReturnQrCode()
-    {
-        var qrCodeId = "507f1f77bcf86cd799439011";
-        var expectedQrCode = new QrCode
-        {
-            Id = qrCodeId,
-            BookingId = "507f1f77bcf86cd799439012",
-            QrCodeData = [1, 2, 3, 4, 5],
-            CreatedAt = DateTime.UtcNow
-        };
-        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, expectedQrCode);
-
-        var result = await _repository.GetByIdAsync(qrCodeId, CancellationToken.None);
-
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(qrCodeId);
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_WithNonExistentId_ShouldThrowKeyNotFoundException()
-    {
-        var qrCodeId = "507f1f77bcf86cd799439999";
-        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(_mockCollection, null);
-
-        var act = async () => await _repository.GetByIdAsync(qrCodeId, CancellationToken.None);
-
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage($"QrCodes with ID '{qrCodeId}' was not found.");
-    }
-
-    [Fact]
-    public async Task CreateAsync_ShouldInsertAndReturnQrCode()
-    {
-        var newQrCode = new QrCode
-        {
-            BookingId = "507f1f77bcf86cd799439011",
-            QrCodeData = [1, 2, 3, 4, 5]
-        };
-        _mockCollection.Setup(x => x.InsertOneAsync(
-                It.IsAny<QrCode>(),
-                It.IsAny<InsertOneOptions>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        var result = await _repository.CreateAsync(newQrCode, CancellationToken.None);
-
-        result.Should().Be(newQrCode);
-        _mockCollection.Verify(x => x.InsertOneAsync(
-            It.Is<QrCode>(q => q.BookingId == newQrCode.BookingId),
-            It.IsAny<InsertOneOptions>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_WithValidId_ShouldReturnTrue()
-    {
-        var qrCodeId = "507f1f77bcf86cd799439011";
-        var deleteResult = new DeleteResult.Acknowledged(1);
-
-        _mockCollection.Setup(x => x.DeleteOneAsync(
-                It.IsAny<FilterDefinition<QrCode>>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(deleteResult);
-
-        var result = await _repository.DeleteAsync(qrCodeId, CancellationToken.None);
-
-        result.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task DeleteAsync_WithNonExistentId_ShouldReturnFalse()
-    {
-        var qrCodeId = "507f1f77bcf86cd799439999";
-        var deleteResult = new DeleteResult.Acknowledged(0);
-
-        _mockCollection.Setup(x => x.DeleteOneAsync(
-                It.IsAny<FilterDefinition<QrCode>>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(deleteResult);
-
-        var result = await _repository.DeleteAsync(qrCodeId, CancellationToken.None);
-
-        result.Should().BeFalse();
     }
 }

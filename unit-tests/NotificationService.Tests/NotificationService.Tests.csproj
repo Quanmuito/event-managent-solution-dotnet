@@ -26,6 +26,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\NotificationService\NotificationService.csproj" />
         <ProjectReference Include="..\..\AWSService\AWSService.csproj" />
+        <ProjectReference Include="..\..\Ems.Common\Ems.Common.csproj" />
         <ProjectReference Include="..\TestUtilities\TestUtilities.csproj" />
     </ItemGroup>
 

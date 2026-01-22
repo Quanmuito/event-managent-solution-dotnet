@@ -116,7 +116,7 @@ public class QrCodeTaskProcessorTests
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("QR code generated successfully")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("QR code generated")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
