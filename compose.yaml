@@ -11,7 +11,7 @@
       MONGO_INITDB_ROOT_PASSWORD: password123
     volumes:
       - mongo_data:/data/db
-      - ./DatabaseService/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+      - ./.docker/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
     networks:
       - app_network
 
@@ -38,8 +38,30 @@
     environment:
       - SERVICES=ses
       - DEBUG=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - app_network
+
+  ses-verifier:
+    image: amazon/aws-cli:latest
+    container_name: ses-verifier-container
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - aws --endpoint-url=http://localstack:4566 ses verify-email-identity --email-address noreply@ems.local --region us-east-1
+    networks:
+      - app_network
+    restart: "no"
 
 volumes:
   mongo_data:

@@ -40,5 +40,14 @@
       "type": "coreclr",
       "request": "attach"
     }
+  ],
+  "compounds": [
+    {
+      "name": "All Services",
+      "configurations": [
+        "EventService.Api",
+        "BookingService.Api"
+      ]
+    }
   ]
 }
