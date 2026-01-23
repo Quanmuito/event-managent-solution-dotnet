@@ -2,7 +2,7 @@ namespace NotificationService.Tests.Services;
 
 using Microsoft.Extensions.Logging;
 using Moq;
-using NotificationService.Services;
+using NotificationService.Common.Services;
 using TestUtilities.Helpers;
 using Xunit;
 

@@ -1,4 +1,4 @@
-namespace NotificationService.Messages;
+namespace NotificationService.Common.Messages;
 
 public record PhoneNotificationTaskMessage<TData>(
     TData Data,

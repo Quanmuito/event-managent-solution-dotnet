@@ -1,4 +1,4 @@
-namespace NotificationService.Services;
+namespace NotificationService.Common.Services;
 
 using AWSService.Settings;
 using Amazon.SimpleEmail;

@@ -69,10 +69,14 @@ This is a microservices-based event management system built with .NET 9.0, follo
   - Supports LocalStack endpoint configuration for local development
 
 - **NotificationService**: Provides notification infrastructure:
-  - `IEmailService` and `EmailService`: Email sending via AWS SES
-  - `IPhoneService` and `PhoneService`: Phone/SMS notification services
-  - Base task processors (`EmailNotificationTaskProcessor<T>`, `PhoneNotificationTaskProcessor<T>`) that can be extended by consuming services
-  - Depends on `AWSService` for AWS SES integration and `Ems.Common` for task processing infrastructure
+  - **NotificationService.Common**: Shared notification infrastructure
+    - `IEmailService` and `EmailService`: Email sending via AWS SES
+    - `IPhoneService` and `PhoneService`: Phone/SMS notification services
+    - Base task processors (`EmailNotificationTaskProcessor<T>`, `PhoneNotificationTaskProcessor<T>`) that can be extended by consuming services
+    - Task message types (`EmailNotificationTaskMessage<T>`, `PhoneNotificationTaskMessage<T>`)
+    - Depends on `AWSService` for AWS SES integration and `Ems.Common` for task processing infrastructure
+  - **NotificationService.Data**: Data access layer (prepared for future use)
+  - **NotificationService.Api**: API layer (prepared for future use)
 
 ### Microservices
 
@@ -126,7 +130,8 @@ This is a microservices-based event management system built with .NET 9.0, follo
 
 ### Layer 1: Infrastructure Services
 
-- **NotificationService** → AWSService, Ems.Common
+- **NotificationService.Common** → AWSService, Ems.Common
+- **NotificationService.Data** → DatabaseService
 - **EventService.Data** → DatabaseService
 - **BookingService.Data** → DatabaseService
 
@@ -134,7 +139,7 @@ This is a microservices-based event management system built with .NET 9.0, follo
 
 - **EventService.Api** → AspNet.Common, Ems.Common, DatabaseService, EventService.Data
   - Indirect dependencies: None (all direct dependencies listed)
-- **BookingService.Api** → AspNet.Common, Ems.Common, DatabaseService, AWSService, NotificationService, EventService.Data, BookingService.Data
+- **BookingService.Api** → AspNet.Common, Ems.Common, DatabaseService, AWSService, NotificationService.Common, EventService.Data, BookingService.Data
   - Indirect dependencies: None (all direct dependencies listed)
 
 ## Dependency Layers
@@ -147,11 +152,11 @@ This is a microservices-based event management system built with .NET 9.0, follo
    - `AspNet.Common` provides API versioning and common endpoint mappings
    - `AWSService` provides AWS client factories and configuration
 
-2. **Layer 1 (Infrastructure Services)**: NotificationService, EventService.Data, BookingService.Data
+2. **Layer 1 (Infrastructure Services)**: NotificationService.Common, NotificationService.Data, EventService.Data, BookingService.Data
 
    - Services and data access layers depending on foundation
-   - `NotificationService` depends on `AWSService` and `Ems.Common` from Layer 0
-   - Data layers (`EventService.Data`, `BookingService.Data`) depend on `DatabaseService` from Layer 0
+   - `NotificationService.Common` depends on `AWSService` and `Ems.Common` from Layer 0
+   - Data layers (`NotificationService.Data`, `EventService.Data`, `BookingService.Data`) depend on `DatabaseService` from Layer 0
    - Provides reusable infrastructure that can be consumed by multiple API services
 
 3. **Layer 2 (API Services)**: EventService.Api, BookingService.Api

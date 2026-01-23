@@ -1,7 +1,7 @@
 namespace NotificationService.Tests.Services;
 
 using AWSService.Settings;
-using NotificationService.Services;
+using NotificationService.Common.Services;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 using Microsoft.Extensions.Logging;

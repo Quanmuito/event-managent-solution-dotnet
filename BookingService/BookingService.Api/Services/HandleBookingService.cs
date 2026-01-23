@@ -8,7 +8,7 @@ using BookingService.Data.Repositories;
 using BookingService.Data.Utils;
 using Ems.Common.Services.Tasks;
 using EventService.Data.Repositories;
-using NotificationService.Messages;
+using NotificationService.Common.Messages;
 using MongoDB.Driver;
 
 public class HandleBookingService(

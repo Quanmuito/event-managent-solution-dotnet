@@ -1,4 +1,4 @@
-namespace NotificationService.Services;
+namespace NotificationService.Common.Services;
 
 public interface IPhoneService
 {

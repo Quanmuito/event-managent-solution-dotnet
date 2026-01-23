@@ -1,4 +1,4 @@
-namespace NotificationService.Messages;
+namespace NotificationService.Common.Messages;
 
 public record EmailNotificationTaskMessage<TData>(
     TData Data,

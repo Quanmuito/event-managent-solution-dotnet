@@ -1,8 +1,8 @@
-namespace NotificationService.Services.Tasks;
+namespace NotificationService.Common.Services.Tasks;
 
 using Ems.Common.Services.Tasks;
-using NotificationService.Messages;
-using NotificationService.Services;
+using NotificationService.Common.Messages;
+using NotificationService.Common.Services;
 using Microsoft.Extensions.Logging;
 
 public abstract class EmailNotificationTaskProcessor<TData>(

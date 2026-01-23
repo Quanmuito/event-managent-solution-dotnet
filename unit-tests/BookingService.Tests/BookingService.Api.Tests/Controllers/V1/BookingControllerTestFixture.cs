@@ -7,7 +7,7 @@ using BookingService.Api.Services;
 using BookingService.Data.Repositories;
 using Ems.Common.Services.Tasks;
 using EventService.Data.Repositories;
-using NotificationService.Messages;
+using NotificationService.Common.Messages;
 using Moq;
 
 public class BookingControllerTestFixture : IDisposable

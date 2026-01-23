@@ -9,11 +9,10 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
-        <PackageReference Include="QRCoder" Version="1.6.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
+      <Content Include="..\..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
     </ItemGroup>
@@ -22,10 +21,7 @@
       <ProjectReference Include="..\..\AspNet.Common\AspNet.Common.csproj" />
       <ProjectReference Include="..\..\Ems.Common\Ems.Common.csproj" />
       <ProjectReference Include="..\..\DatabaseService\DatabaseService.csproj" />
-      <ProjectReference Include="..\..\AWSService\AWSService.csproj" />
-      <ProjectReference Include="..\..\NotificationService\NotificationService.Common\NotificationService.Common.csproj" />
-      <ProjectReference Include="..\..\EventService\EventService.Data\EventService.Data.csproj" />
-      <ProjectReference Include="..\BookingService.Data\BookingService.Data.csproj" />
+      <ProjectReference Include="..\NotificationService.Data\NotificationService.Data.csproj" />
     </ItemGroup>
 
 </Project>

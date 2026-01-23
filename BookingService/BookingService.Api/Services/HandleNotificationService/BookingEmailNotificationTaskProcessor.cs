@@ -3,8 +3,8 @@ namespace BookingService.Api.Services;
 using BookingService.Api.Models;
 using BookingService.Api.Utils;
 using EventService.Data.Repositories;
-using NotificationService.Services;
-using NotificationService.Services.Tasks;
+using NotificationService.Common.Services;
+using NotificationService.Common.Services.Tasks;
 using Microsoft.Extensions.Logging;
 
 public class BookingEmailNotificationTaskProcessor(

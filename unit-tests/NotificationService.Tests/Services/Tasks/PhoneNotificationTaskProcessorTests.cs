@@ -1,8 +1,8 @@
 namespace NotificationService.Tests.Services.Tasks;
 
-using NotificationService.Messages;
-using NotificationService.Services;
-using NotificationService.Services.Tasks;
+using NotificationService.Common.Messages;
+using NotificationService.Common.Services;
+using NotificationService.Common.Services.Tasks;
 using Microsoft.Extensions.Logging;
 using FluentAssertions;
 using Moq;

@@ -84,7 +84,8 @@ graph TB
     end
 
     subgraph Layer1["Layer 1: Infrastructure Services"]
-        NotificationService[NotificationService]
+        NotificationService_Common[NotificationService.Common]
+        NotificationService_Data[NotificationService.Data]
         EventService_Data[EventService.Data]
         BookingService_Data[BookingService.Data]
     end
@@ -92,10 +93,12 @@ graph TB
     subgraph Layer2["Layer 2: API Services"]
         EventService_Api[EventService.Api]
         BookingService_Api[BookingService.Api]
+        NotificationService_Api[NotificationService.Api]
     end
 
-    NotificationService --> AWSService
-    NotificationService --> Ems_Common
+    NotificationService_Common --> AWSService
+    NotificationService_Common --> Ems_Common
+    NotificationService_Data --> DatabaseService
     EventService_Data --> DatabaseService
     BookingService_Data --> DatabaseService
 
@@ -108,14 +111,22 @@ graph TB
     BookingService_Api --> Ems_Common
     BookingService_Api --> DatabaseService
     BookingService_Api --> AWSService
-    BookingService_Api --> NotificationService
+    BookingService_Api --> NotificationService_Common
     BookingService_Api --> EventService_Data
     BookingService_Api --> BookingService_Data
+
+    NotificationService_Api --> AspNet_Common
+    NotificationService_Api --> Ems_Common
+    NotificationService_Api --> DatabaseService
+    NotificationService_Api --> NotificationService_Common
+    NotificationService_Api --> NotificationService_Data
 
     style DatabaseService fill:#0052a3
     style AspNet_Common fill:#b8860b
     style AWSService fill:#ff8c00
-    style NotificationService fill:#e65100
+    style NotificationService_Common fill:#e65100
+    style NotificationService_Data fill:#e65100
+    style NotificationService_Api fill:#e65100
     style Ems_Common fill:#b8860b
     style EventService_Data fill:#1b5e20
     style EventService_Api fill:#1b5e20
@@ -124,17 +135,22 @@ graph TB
 
     linkStyle 0 stroke:#e65100,stroke-width:2px
     linkStyle 1 stroke:#e65100,stroke-width:2px
-    linkStyle 2 stroke:#1b5e20,stroke-width:2px
-    linkStyle 3 stroke:#6a1b9a,stroke-width:2px
-    linkStyle 4 stroke:#1b5e20,stroke-width:2px
+    linkStyle 2 stroke:#e65100,stroke-width:2px
+    linkStyle 3 stroke:#1b5e20,stroke-width:2px
+    linkStyle 4 stroke:#6a1b9a,stroke-width:2px
     linkStyle 5 stroke:#1b5e20,stroke-width:2px
     linkStyle 6 stroke:#1b5e20,stroke-width:2px
     linkStyle 7 stroke:#1b5e20,stroke-width:2px
-    linkStyle 8 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 8 stroke:#1b5e20,stroke-width:2px
     linkStyle 9 stroke:#6a1b9a,stroke-width:2px
     linkStyle 10 stroke:#6a1b9a,stroke-width:2px
     linkStyle 11 stroke:#6a1b9a,stroke-width:2px
     linkStyle 12 stroke:#6a1b9a,stroke-width:2px
     linkStyle 13 stroke:#6a1b9a,stroke-width:2px
     linkStyle 14 stroke:#6a1b9a,stroke-width:2px
+    linkStyle 15 stroke:#e65100,stroke-width:2px
+    linkStyle 16 stroke:#e65100,stroke-width:2px
+    linkStyle 17 stroke:#e65100,stroke-width:2px
+    linkStyle 18 stroke:#e65100,stroke-width:2px
+    linkStyle 19 stroke:#e65100,stroke-width:2px
 ```

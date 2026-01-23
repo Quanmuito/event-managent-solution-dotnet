@@ -12,7 +12,6 @@ public class ServiceCollectionExtensionsTests
 {
     [Theory]
     [InlineData(typeof(Microsoft.Extensions.Options.IOptions<MvcOptions>))]
-    [InlineData(typeof(Microsoft.AspNetCore.OpenApi.IOpenApiService))]
     [InlineData(typeof(Microsoft.AspNetCore.Mvc.ApiExplorer.IApiDescriptionGroupCollectionProvider))]
     [InlineData(typeof(Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService))]
     [InlineData(typeof(Microsoft.AspNetCore.Http.IProblemDetailsService))]

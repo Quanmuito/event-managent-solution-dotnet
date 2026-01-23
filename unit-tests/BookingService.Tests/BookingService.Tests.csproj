@@ -28,7 +28,7 @@
         <ProjectReference Include="..\..\BookingService\BookingService.Data\BookingService.Data.csproj" />
         <ProjectReference Include="..\..\DatabaseService\DatabaseService.csproj" />
         <ProjectReference Include="..\..\EventService\EventService.Data\EventService.Data.csproj" />
-        <ProjectReference Include="..\..\NotificationService\NotificationService.csproj" />
+        <ProjectReference Include="..\..\NotificationService\NotificationService.Common\NotificationService.Common.csproj" />
         <ProjectReference Include="..\TestUtilities\TestUtilities.csproj" />
     </ItemGroup>
 
