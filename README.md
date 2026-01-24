@@ -72,54 +72,32 @@ This is an on-going project for learning purpose to get an understand on <strong
     - Authorization
 
 ### Project Architecture Overview
+- Layer 0: Foundation (No Project Dependencies)
+- Layer 1: Infrastructure (Depends on Foundation)
+- Layer 2: APIs (Depends on both Foundation and Infrastructure)
 #### More details in [architecture.md](.docs/architecture.md)
 
 ```mermaid
 graph TB
     subgraph Layer0["Layer 0: Foundation"]
-        DatabaseService[DatabaseService]
         AspNet_Common[AspNet.Common]
-        AWSService[AWSService]
         Ems_Common[Ems.Common]
+        DatabaseService[DatabaseService]
+        AWSService[AWSService]
     end
 
-    subgraph Layer1["Layer 1: Infrastructure Services"]
-        NotificationService_Common[NotificationService.Common]
-        NotificationService_Data[NotificationService.Data]
+    subgraph Layer1["Layer 1: Infrastructure"]
         EventService_Data[EventService.Data]
         BookingService_Data[BookingService.Data]
+        NotificationService_Data[NotificationService.Data]
+        NotificationService_Common[NotificationService.Common]
     end
 
-    subgraph Layer2["Layer 2: API Services"]
+    subgraph Layer2["Layer 2: APIs"]
         EventService_Api[EventService.Api]
         BookingService_Api[BookingService.Api]
         NotificationService_Api[NotificationService.Api]
     end
-
-    NotificationService_Common --> AWSService
-    NotificationService_Common --> Ems_Common
-    NotificationService_Data --> DatabaseService
-    EventService_Data --> DatabaseService
-    BookingService_Data --> DatabaseService
-
-    EventService_Api --> AspNet_Common
-    EventService_Api --> Ems_Common
-    EventService_Api --> DatabaseService
-    EventService_Api --> EventService_Data
-
-    BookingService_Api --> AspNet_Common
-    BookingService_Api --> Ems_Common
-    BookingService_Api --> DatabaseService
-    BookingService_Api --> AWSService
-    BookingService_Api --> NotificationService_Common
-    BookingService_Api --> EventService_Data
-    BookingService_Api --> BookingService_Data
-
-    NotificationService_Api --> AspNet_Common
-    NotificationService_Api --> Ems_Common
-    NotificationService_Api --> DatabaseService
-    NotificationService_Api --> NotificationService_Common
-    NotificationService_Api --> NotificationService_Data
 
     style DatabaseService fill:#0052a3
     style AspNet_Common fill:#b8860b
@@ -132,25 +110,4 @@ graph TB
     style EventService_Api fill:#1b5e20
     style BookingService_Data fill:#6a1b9a
     style BookingService_Api fill:#6a1b9a
-
-    linkStyle 0 stroke:#e65100,stroke-width:2px
-    linkStyle 1 stroke:#e65100,stroke-width:2px
-    linkStyle 2 stroke:#e65100,stroke-width:2px
-    linkStyle 3 stroke:#1b5e20,stroke-width:2px
-    linkStyle 4 stroke:#6a1b9a,stroke-width:2px
-    linkStyle 5 stroke:#1b5e20,stroke-width:2px
-    linkStyle 6 stroke:#1b5e20,stroke-width:2px
-    linkStyle 7 stroke:#1b5e20,stroke-width:2px
-    linkStyle 8 stroke:#1b5e20,stroke-width:2px
-    linkStyle 9 stroke:#6a1b9a,stroke-width:2px
-    linkStyle 10 stroke:#6a1b9a,stroke-width:2px
-    linkStyle 11 stroke:#6a1b9a,stroke-width:2px
-    linkStyle 12 stroke:#6a1b9a,stroke-width:2px
-    linkStyle 13 stroke:#6a1b9a,stroke-width:2px
-    linkStyle 14 stroke:#6a1b9a,stroke-width:2px
-    linkStyle 15 stroke:#e65100,stroke-width:2px
-    linkStyle 16 stroke:#e65100,stroke-width:2px
-    linkStyle 17 stroke:#e65100,stroke-width:2px
-    linkStyle 18 stroke:#e65100,stroke-width:2px
-    linkStyle 19 stroke:#e65100,stroke-width:2px
 ```

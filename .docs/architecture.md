@@ -1,6 +1,53 @@
 # Architecture
 
-## Architecture Overview
+## Dependency Overview
+
+### Layer 0: Foundation (No Project Dependencies)
+
+- **DatabaseService** - MongoDB infrastructure and repository pattern
+- **AspNet.Common** - ASP.NET Core abstractions and extensions
+- **AWSService** - AWS client factories and configuration
+- **Ems.Common** - Shared business logic and cross-cutting concerns (logging, task processing, exception handling)
+
+### Layer 1: Infrastructure Services
+
+- **NotificationService.Common** → AWSService, Ems.Common
+- **NotificationService.Data** → DatabaseService
+- **EventService.Data** → DatabaseService
+- **BookingService.Data** → DatabaseService
+
+### Layer 2: API Services
+
+- **EventService.Api** → AspNet.Common, Ems.Common, DatabaseService, EventService.Data
+  - Indirect dependencies: None (all direct dependencies listed)
+- **BookingService.Api** → AspNet.Common, Ems.Common, DatabaseService, AWSService, NotificationService.Common, EventService.Data, BookingService.Data
+  - Indirect dependencies: None (all direct dependencies listed)
+
+## Dependency Layers
+
+1. **Layer 0 (Foundation)**: DatabaseService, AspNet.Common, AWSService, Ems.Common
+
+   - Base infrastructure with no project dependencies
+   - `Ems.Common` provides shared business logic and cross-cutting concerns (logging, task processing, exception handling)
+   - `DatabaseService` provides MongoDB infrastructure and generic repository pattern
+   - `AspNet.Common` provides API versioning and common endpoint mappings
+   - `AWSService` provides AWS client factories and configuration
+
+2. **Layer 1 (Infrastructure Services)**: NotificationService.Common, NotificationService.Data, EventService.Data, BookingService.Data
+
+   - Services and data access layers depending on foundation
+   - `NotificationService.Common` depends on `AWSService` and `Ems.Common` from Layer 0
+   - Data layers (`NotificationService.Data`, `EventService.Data`, `BookingService.Data`) depend on `DatabaseService` from Layer 0
+   - Provides reusable infrastructure that can be consumed by multiple API services
+
+3. **Layer 2 (API Services)**: EventService.Api, BookingService.Api
+
+   - Application entry points consuming all lower layers
+   - `EventService.Api` depends on Layer 0 and `EventService.Data` from Layer 1
+   - `BookingService.Api` depends on Layer 0, Layer 1 services, and `EventService.Data` (for event validation)
+   - Each API service is independently deployable and runs on separate portss
+
+## Architecture Details
 
 This is a microservices-based event management system built with .NET 9.0, following a layered architecture pattern with clear separation of concerns.
 
@@ -118,53 +165,6 @@ This is a microservices-based event management system built with .NET 9.0, follo
   - Configured via `compose.yaml` with SES verifier container
 
 - **Mongo Express**: Web-based MongoDB administration interface on port 8081
-
-## Dependency Overview
-
-### Layer 0: Foundation (No Project Dependencies)
-
-- **DatabaseService** - MongoDB infrastructure and repository pattern
-- **AspNet.Common** - ASP.NET Core abstractions and extensions
-- **AWSService** - AWS client factories and configuration
-- **Ems.Common** - Shared business logic and cross-cutting concerns (logging, task processing, exception handling)
-
-### Layer 1: Infrastructure Services
-
-- **NotificationService.Common** → AWSService, Ems.Common
-- **NotificationService.Data** → DatabaseService
-- **EventService.Data** → DatabaseService
-- **BookingService.Data** → DatabaseService
-
-### Layer 2: API Services
-
-- **EventService.Api** → AspNet.Common, Ems.Common, DatabaseService, EventService.Data
-  - Indirect dependencies: None (all direct dependencies listed)
-- **BookingService.Api** → AspNet.Common, Ems.Common, DatabaseService, AWSService, NotificationService.Common, EventService.Data, BookingService.Data
-  - Indirect dependencies: None (all direct dependencies listed)
-
-## Dependency Layers
-
-1. **Layer 0 (Foundation)**: DatabaseService, AspNet.Common, AWSService, Ems.Common
-
-   - Base infrastructure with no project dependencies
-   - `Ems.Common` provides shared business logic and cross-cutting concerns (logging, task processing, exception handling)
-   - `DatabaseService` provides MongoDB infrastructure and generic repository pattern
-   - `AspNet.Common` provides API versioning and common endpoint mappings
-   - `AWSService` provides AWS client factories and configuration
-
-2. **Layer 1 (Infrastructure Services)**: NotificationService.Common, NotificationService.Data, EventService.Data, BookingService.Data
-
-   - Services and data access layers depending on foundation
-   - `NotificationService.Common` depends on `AWSService` and `Ems.Common` from Layer 0
-   - Data layers (`NotificationService.Data`, `EventService.Data`, `BookingService.Data`) depend on `DatabaseService` from Layer 0
-   - Provides reusable infrastructure that can be consumed by multiple API services
-
-3. **Layer 2 (API Services)**: EventService.Api, BookingService.Api
-
-   - Application entry points consuming all lower layers
-   - `EventService.Api` depends on Layer 0 and `EventService.Data` from Layer 1
-   - `BookingService.Api` depends on Layer 0, Layer 1 services, and `EventService.Data` (for event validation)
-   - Each API service is independently deployable and runs on separate ports
 
 ## Configuration
 
