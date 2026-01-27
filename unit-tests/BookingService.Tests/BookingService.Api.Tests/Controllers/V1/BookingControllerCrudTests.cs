@@ -160,7 +160,7 @@ public class BookingControllerCrudTests : IClassFixture<BookingControllerTestFix
     {
         var updateDto = TestDataBuilder.CreateValidUpdateBookingDto();
         var updatedBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
-        updatedBooking.Status = updateDto.Status!;
+        updatedBooking.Name = updateDto.Name!;
         ControllerTestSetupHelper.SetupMockRepositoryForUpdate(_fixture.MockRepository, updatedBooking, "507f1f77bcf86cd799439011");
 
         var result = await _fixture.Controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);

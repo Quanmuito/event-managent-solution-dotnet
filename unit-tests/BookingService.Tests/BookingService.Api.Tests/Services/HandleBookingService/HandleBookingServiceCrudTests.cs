@@ -160,7 +160,7 @@ public class HandleBookingServiceCrudTests : IClassFixture<HandleBookingServiceT
     {
         var updateDto = TestDataBuilder.CreateValidUpdateBookingDto();
         var updatedBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
-        updatedBooking.Status = updateDto.Status!;
+        updatedBooking.Name = updateDto.Name!;
         updatedBooking.UpdatedAt = DateTime.UtcNow;
 
         _fixture.MockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
@@ -169,17 +169,16 @@ public class HandleBookingServiceCrudTests : IClassFixture<HandleBookingServiceT
         var result = await _fixture.Service.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.Status.Should().Be(updateDto.Status);
+        result.Name.Should().Be(updateDto.Name);
         result.UpdatedAt.Should().NotBeNull();
         _fixture.MockRepository.Verify(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Update_WithNullStatusButOtherFields_ShouldUpdateFields()
+    public async Task Update_WithNameField_ShouldUpdateFields()
     {
         var updateDto = new UpdateBookingDto
         {
-            Status = null,
             Name = "Updated Name"
         };
         var existingBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");

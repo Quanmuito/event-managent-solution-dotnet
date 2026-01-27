@@ -1,7 +1,6 @@
 namespace BookingService.Api.Tests.Models;
 
 using BookingService.Api.Models;
-using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
 using TestUtilities.Helpers;
 using FluentAssertions;
@@ -10,14 +9,12 @@ using Xunit;
 public class UpdateBookingDtoTests
 {
     private static UpdateBookingDto CreateDto(
-        string? status = null,
         string? name = null,
         string? email = null,
         string? phone = null)
     {
         return new UpdateBookingDto
         {
-            Status = status,
             Name = name,
             Email = email,
             Phone = phone
@@ -34,41 +31,6 @@ public class UpdateBookingDtoTests
         results.Should().BeEmpty();
     }
 
-    [Theory]
-    [InlineData(BookingStatus.Registered)]
-    [InlineData(BookingStatus.Canceled)]
-    [InlineData(BookingStatus.QueueEnrolled)]
-    [InlineData(BookingStatus.QueuePending)]
-    public void Validate_WithValidStatus_ShouldReturnNoValidationErrors(string status)
-    {
-        var dto = CreateDto(status: status);
-        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
-
-        isValid.Should().BeTrue();
-        results.Should().BeEmpty();
-    }
-
-    [Theory]
-    [InlineData(null)]
-    public void Validate_WithOptionalStatus_ShouldReturnNoValidationErrors(string? status)
-    {
-        var dto = CreateDto(status: status);
-        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
-
-        isValid.Should().BeTrue();
-        results.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Validate_WithEmptyStatus_ShouldReturnValidationError()
-    {
-        var dto = CreateDto(status: "");
-        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
-
-        isValid.Should().BeFalse();
-        results.Should().Contain(r => r.MemberNames.Contains("Status"));
-    }
-
     [Fact]
     public void Validate_WithAllNullFields_ShouldReturnNoValidationErrors()
     {
@@ -77,16 +39,6 @@ public class UpdateBookingDtoTests
 
         isValid.Should().BeTrue();
         results.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Validate_WithInvalidStatus_ShouldReturnValidationError()
-    {
-        var dto = CreateDto(status: "invalid_status");
-        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
-
-        isValid.Should().BeFalse();
-        results.Should().Contain(r => r.MemberNames.Contains("Status"));
     }
 
     [Theory]

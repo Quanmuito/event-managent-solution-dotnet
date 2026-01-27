@@ -74,7 +74,7 @@ public class BookingControllerNotificationTests : IClassFixture<BookingControlle
     {
         var updateDto = TestDataBuilder.CreateValidUpdateBookingDto();
         var updatedBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
-        updatedBooking.Status = updateDto.Status!;
+        updatedBooking.Name = updateDto.Name!;
         updatedBooking.UpdatedAt = DateTime.UtcNow;
         _fixture.MockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedBooking);

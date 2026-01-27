@@ -34,15 +34,7 @@ public static class TestDataBuilder
     {
         return new UpdateBookingDto
         {
-            Status = BookingStatus.Canceled
-        };
-    }
-
-    public static UpdateBookingDto CreateUpdateBookingDtoWithNullStatus()
-    {
-        return new UpdateBookingDto
-        {
-            Status = null
+            Name = "Updated Name"
         };
     }
 

@@ -74,7 +74,7 @@ public class HandleBookingServiceNotificationTests : IClassFixture<HandleBooking
     {
         var updateDto = TestDataBuilder.CreateValidUpdateBookingDto();
         var updatedBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
-        updatedBooking.Status = updateDto.Status!;
+        updatedBooking.Name = updateDto.Name!;
         updatedBooking.UpdatedAt = DateTime.UtcNow;
 
         _fixture.MockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
@@ -87,11 +87,10 @@ public class HandleBookingServiceNotificationTests : IClassFixture<HandleBooking
     }
 
     [Fact]
-    public async Task Update_WithNullStatusButOtherFields_ShouldTriggerNotification()
+    public async Task Update_WithNameField_ShouldTriggerNotification()
     {
         var updateDto = new UpdateBookingDto
         {
-            Status = null,
             Name = "Updated Name"
         };
         var existingBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");

@@ -64,9 +64,6 @@ public class HandleBookingService(
     {
         var updates = new List<UpdateDefinition<Booking>>();
 
-        if (updateDto.Status != null)
-            updates.Add(Builders<Booking>.Update.Set(b => b.Status, updateDto.Status));
-
         if (updateDto.Name != null)
             updates.Add(Builders<Booking>.Update.Set(b => b.Name, updateDto.Name));
 
