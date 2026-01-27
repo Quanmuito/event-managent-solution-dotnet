@@ -7,6 +7,7 @@ using DatabaseService;
 using TestUtilities.Helpers;
 using FluentAssertions;
 using MongoDB.Driver;
+using Moq;
 using Xunit;
 
 public class QueueRepositoryTests : RepositoryTestBase<Queue, QueueRepository>
@@ -47,19 +48,20 @@ public class QueueRepositoryTests : RepositoryTestBase<Queue, QueueRepository>
         actual.Id.Should().Be(expected.Id);
         actual.EventId.Should().Be(expected.EventId);
         actual.Available.Should().Be(expected.Available);
-        actual.Top.Should().Be(expected.Top);
+        actual.Length.Should().Be(expected.Length);
+        actual.Position.Should().Be(expected.Position);
     }
 
     protected override bool AssertEntityEquals(Queue actual, Queue expected)
     {
-        return actual.Id == expected.Id && actual.EventId == expected.EventId && actual.Available == expected.Available && actual.Top == expected.Top;
+        return actual.Id == expected.Id && actual.EventId == expected.EventId && actual.Available == expected.Available && actual.Length == expected.Length && actual.Position == expected.Position;
     }
 
     [Fact]
     public async Task GetByEventIdAsync_WithExistingEventId_ShouldReturnQueue()
     {
         var eventId = "507f1f77bcf86cd799439012";
-        var expectedQueue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 10);
+        var expectedQueue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 0, 10);
         MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, expectedQueue);
 
         var result = await Repository.GetByEventIdAsync(eventId, CancellationToken.None);
@@ -67,7 +69,8 @@ public class QueueRepositoryTests : RepositoryTestBase<Queue, QueueRepository>
         result.Should().NotBeNull();
         result.EventId.Should().Be(eventId);
         result.Available.Should().Be(expectedQueue.Available);
-        result.Top.Should().Be(expectedQueue.Top);
+        result.Length.Should().Be(expectedQueue.Length);
+        result.Position.Should().Be(expectedQueue.Position);
     }
 
     [Fact]
@@ -80,5 +83,135 @@ public class QueueRepositoryTests : RepositoryTestBase<Queue, QueueRepository>
 
         await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage($"Queue with EventId '{eventId}' was not found.");
+    }
+
+    [Fact]
+    public async Task BookingRegisteredAsync_WithValidEventId_ShouldReturnTrue()
+    {
+        var eventId = "507f1f77bcf86cd799439012";
+        var queue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 0, 0);
+        var updatedQueue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 4, 0, 0);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, queue);
+        MockCollection.Setup(x => x.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<Queue>>(),
+                It.IsAny<UpdateDefinition<Queue>>(),
+                It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedQueue);
+
+        var result = await Repository.BookingRegisteredAsync(eventId, CancellationToken.None);
+
+        result.Should().BeTrue();
+        MockCollection.Verify(x => x.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<Queue>>(),
+            It.IsAny<UpdateDefinition<Queue>>(),
+            It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task EnqueueAsync_WithValidEventId_ShouldReturnTrue()
+    {
+        var eventId = "507f1f77bcf86cd799439012";
+        var queue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 3, 0);
+        var updatedQueue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 4, 0);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, queue);
+        MockCollection.Setup(x => x.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<Queue>>(),
+                It.IsAny<UpdateDefinition<Queue>>(),
+                It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedQueue);
+
+        var result = await Repository.EnqueueAsync(eventId, CancellationToken.None);
+
+        result.Should().BeTrue();
+        MockCollection.Verify(x => x.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<Queue>>(),
+            It.IsAny<UpdateDefinition<Queue>>(),
+            It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DequeueAsync_WithValidEventIdAndLengthGreaterThanZero_ShouldReturnTrue()
+    {
+        var eventId = "507f1f77bcf86cd799439012";
+        var queue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 3, 0);
+        var updatedQueue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 2, 0);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, queue);
+        MockCollection.Setup(x => x.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<Queue>>(),
+                It.IsAny<UpdateDefinition<Queue>>(),
+                It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedQueue);
+
+        var result = await Repository.DequeueAsync(eventId, CancellationToken.None);
+
+        result.Should().BeTrue();
+        MockCollection.Verify(x => x.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<Queue>>(),
+            It.IsAny<UpdateDefinition<Queue>>(),
+            It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DequeueAsync_WhenLengthIsZero_ShouldReturnFalse()
+    {
+        var eventId = "507f1f77bcf86cd799439012";
+        var queue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 0, 0);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, queue);
+
+        var result = await Repository.DequeueAsync(eventId, CancellationToken.None);
+
+        result.Should().BeFalse();
+        MockCollection.Verify(x => x.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<Queue>>(),
+            It.IsAny<UpdateDefinition<Queue>>(),
+            It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task NextAsync_WithValidEventIdAndPositionNotAtMax_ShouldReturnTrue()
+    {
+        var eventId = "507f1f77bcf86cd799439012";
+        var queue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 5, 2);
+        var updatedQueue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 5, 3);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, queue);
+        MockCollection.Setup(x => x.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<Queue>>(),
+                It.IsAny<UpdateDefinition<Queue>>(),
+                It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedQueue);
+
+        var result = await Repository.NextAsync(eventId, CancellationToken.None);
+
+        result.Should().BeTrue();
+        MockCollection.Verify(x => x.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<Queue>>(),
+            It.IsAny<UpdateDefinition<Queue>>(),
+            It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task NextAsync_WhenPositionIsAtMax_ShouldReturnFalse()
+    {
+        var eventId = "507f1f77bcf86cd799439012";
+        var queue = TestDataBuilder.CreateQueue("507f1f77bcf86cd799439011", eventId, 5, 5, 4);
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, queue);
+
+        var result = await Repository.NextAsync(eventId, CancellationToken.None);
+
+        result.Should().BeFalse();
+        MockCollection.Verify(x => x.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<Queue>>(),
+            It.IsAny<UpdateDefinition<Queue>>(),
+            It.IsAny<FindOneAndUpdateOptions<Queue>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 }

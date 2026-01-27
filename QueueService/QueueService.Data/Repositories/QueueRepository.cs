@@ -15,4 +15,52 @@ public class QueueRepository(MongoDbContext mongoDbContext) : Repository<Queue>(
 
         return result;
     }
+
+    public async Task<bool> BookingRegisteredAsync(string eventId, CancellationToken cancellationToken)
+    {
+        var queue = await GetByEventIdAsync(eventId, cancellationToken);
+        var updateDefinition = Builders<Queue>.Update
+            .Inc(q => q.Available, -1)
+            .Set(q => q.UpdatedAt, DateTime.UtcNow);
+
+        await UpdateAsync(queue.Id!, updateDefinition, cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> EnqueueAsync(string eventId, CancellationToken cancellationToken)
+    {
+        var queue = await GetByEventIdAsync(eventId, cancellationToken);
+        var updateDefinition = Builders<Queue>.Update
+            .Inc(q => q.Length, 1)
+            .Set(q => q.UpdatedAt, DateTime.UtcNow);
+
+        await UpdateAsync(queue.Id!, updateDefinition, cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> DequeueAsync(string eventId, CancellationToken cancellationToken)
+    {
+        var queue = await GetByEventIdAsync(eventId, cancellationToken);
+        if (queue.Length == 0) return false;
+
+        var updateDefinition = Builders<Queue>.Update
+            .Inc(q => q.Length, -1)
+            .Set(q => q.UpdatedAt, DateTime.UtcNow);
+
+        await UpdateAsync(queue.Id!, updateDefinition, cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> NextAsync(string eventId, CancellationToken cancellationToken)
+    {
+        var queue = await GetByEventIdAsync(eventId, cancellationToken);
+        if (queue.Position == queue.Length - 1) return false;
+
+        var updateDefinition = Builders<Queue>.Update
+            .Inc(q => q.Position, 1)
+            .Set(q => q.UpdatedAt, DateTime.UtcNow);
+
+        await UpdateAsync(queue.Id!, updateDefinition, cancellationToken);
+        return true;
+    }
 }

@@ -16,8 +16,11 @@ public class Queue
     [BsonElement("available")]
     public int Available { get; set; }
 
-    [BsonElement("top")]
-    public int Top { get; set; }
+    [BsonElement("length")]
+    public int Length { get; set; } = 0;
+
+    [BsonElement("position")]
+    public int Position { get; set; } = 0;
 
     [BsonElement("createdAt")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
