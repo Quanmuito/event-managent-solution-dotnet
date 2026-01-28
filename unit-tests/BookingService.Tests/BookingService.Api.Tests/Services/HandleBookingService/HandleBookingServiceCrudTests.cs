@@ -136,24 +136,6 @@ public class HandleBookingServiceCrudTests : IClassFixture<HandleBookingServiceT
             .WithMessage($"Events with ID '{dto.EventId}' was not found.");
     }
 
-    [Fact]
-    public async Task Create_WhenBookingIdIsNull_ShouldThrowInvalidOperationException()
-    {
-        var dto = TestDataBuilder.CreateValidCreateBookingDto();
-        _fixture.MockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Event { Id = dto.EventId });
-        _fixture.MockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Booking b, CancellationToken ct) =>
-            {
-                b.Id = null;
-                return b;
-            });
-
-        var act = async () => await _fixture.Service.Create(dto, CancellationToken.None);
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("Failed to create booking.");
-    }
 
     [Fact]
     public async Task Update_WithValidDto_ShouldUpdateAndReturnBooking()

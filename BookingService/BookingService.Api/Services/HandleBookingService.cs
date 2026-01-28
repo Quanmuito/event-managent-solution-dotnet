@@ -34,12 +34,9 @@ public class HandleBookingService(
         };
         var booking = await bookingRepository.CreateAsync(newBooking, cancellationToken);
 
-        if (booking.Id == null)
-            throw new InvalidOperationException("Failed to create booking.");
-
         if (booking.Status == BookingStatus.Registered)
         {
-            await qrCodeTaskQueue.EnqueueAsync(new QrCodeTaskMessage(booking.Id), cancellationToken);
+            await EnqueueQrCodeAsync(booking, cancellationToken);
             await EnqueueNotificationAsync(booking, BookingOperation.Registered, cancellationToken);
         }
 
@@ -88,19 +85,9 @@ public class HandleBookingService(
 
     public async Task<Booking> Confirm(string id, CancellationToken cancellationToken)
     {
-        var booking = await bookingRepository.GetByIdAsync(id, cancellationToken);
+        var result = await bookingRepository.ConfirmAsync(id, cancellationToken);
 
-        if (booking.Status != BookingStatus.QueuePending)
-            throw new InvalidOperationException("Only bookings with QueuePending status can be confirmed.");
-
-        var updateDef = Builders<Booking>.Update
-            .Set(b => b.Status, BookingStatus.Registered)
-            .Set(b => b.UpdatedAt, DateTime.UtcNow);
-
-        var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
-
-        await qrCodeTaskQueue.EnqueueAsync(new QrCodeTaskMessage(result.Id!), cancellationToken);
-
+        await EnqueueQrCodeAsync(result, cancellationToken);
         await EnqueueNotificationAsync(result, BookingOperation.Confirmed, cancellationToken);
 
         return result;
@@ -108,30 +95,25 @@ public class HandleBookingService(
 
     public async Task<Booking> Cancel(string id, CancellationToken cancellationToken)
     {
-        var booking = await bookingRepository.GetByIdAsync(id, cancellationToken);
-
-        if (booking.Status == BookingStatus.Canceled)
-            throw new InvalidOperationException("Booking is already canceled.");
-
-        var updateDef = Builders<Booking>.Update
-            .Set(b => b.Status, BookingStatus.Canceled)
-            .Set(b => b.UpdatedAt, DateTime.UtcNow);
-
-        var result = await bookingRepository.UpdateAsync(id, updateDef, cancellationToken);
+        var result = await bookingRepository.CancelAsync(id, cancellationToken);
 
         await EnqueueNotificationAsync(result, BookingOperation.Canceled, cancellationToken);
 
         return result;
     }
 
+    // TODO: Add auth guard
     public async Task<bool> Delete(string id, CancellationToken cancellationToken)
     {
         var deleted = await bookingRepository.DeleteAsync(id, cancellationToken);
-
-        // TODO: Send notification to the next in queue when queueService is implemented
-        // await queueService.EnqueueAsync(new QueueMessage(id), cancellationToken);
-
         return deleted;
+    }
+
+    private async Task EnqueueQrCodeAsync(Booking booking, CancellationToken cancellationToken)
+    {
+        await qrCodeTaskQueue.EnqueueAsync(
+            new QrCodeTaskMessage(booking.Id!),
+            cancellationToken);
     }
 
     private async Task EnqueueNotificationAsync(Booking booking, string operation, CancellationToken cancellationToken)

@@ -115,6 +115,15 @@ public abstract class RepositoryTestBase<TEntity, TRepository>
     }
 
     [Fact]
+    public async Task CreateAsync_WithNullEntity_ShouldThrowArgumentNullException()
+    {
+        var act = async () => await Repository.CreateAsync(null!, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("entity");
+    }
+
+    [Fact]
     public async Task UpdateAsync_WithValidId_ShouldUpdateAndReturnEntity()
     {
         var entityId = GetValidEntityId();

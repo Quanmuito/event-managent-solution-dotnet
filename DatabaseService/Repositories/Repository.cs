@@ -25,6 +25,7 @@ public class Repository<T>(MongoDbContext mongoDbContext, string collectionName)
 
     public async Task<T> CreateAsync(T entity, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(entity);
         await Collection.InsertOneAsync(entity, cancellationToken: cancellationToken);
         return entity;
     }
