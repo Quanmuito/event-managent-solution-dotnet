@@ -5,6 +5,7 @@ using DatabaseService.Repositories;
 
 public interface IBookingRepository : IRepository<Booking>
 {
+    Task<Booking> PromoteInQueueAsync(string eventId, CancellationToken cancellationToken);
     Task<Booking> ConfirmAsync(string id, CancellationToken cancellationToken);
     Task<Booking> CancelAsync(string id, CancellationToken cancellationToken);
 }

@@ -21,7 +21,23 @@ public class HandleBookingService(
 {
     public async Task<Booking> Create(CreateBookingDto createDto, CancellationToken cancellationToken)
     {
-        await eventRepository.GetByIdAsync(createDto.EventId, cancellationToken);
+        var _event = await eventRepository.GetByIdAsync(createDto.EventId, cancellationToken);
+
+        if (createDto.Status == BookingStatus.QueueEnrolled && _event.Available > 0)
+            createDto.Status = BookingStatus.Registered;
+
+        if (createDto.Status == BookingStatus.Registered)
+        {
+            // Prevent overbooking
+            try
+            {
+                await eventRepository.OnBookingRegisteredAsync(createDto.EventId, cancellationToken);
+            }
+            catch (InvalidOperationException)
+            {
+                throw new InvalidOperationException("Booking registration failed: No available seats for the event.");
+            }
+        }
 
         var newBooking = new Booking
         {
@@ -95,8 +111,22 @@ public class HandleBookingService(
 
     public async Task<Booking> Cancel(string id, CancellationToken cancellationToken)
     {
-        var result = await bookingRepository.CancelAsync(id, cancellationToken);
+        var booking = await bookingRepository.GetByIdAsync(id, cancellationToken);
 
+        if (booking.Status == BookingStatus.Registered)
+        {
+            try
+            {
+                var nextInQueueBooking = await bookingRepository.PromoteInQueueAsync(booking.EventId, cancellationToken);
+                await EnqueueNotificationAsync(nextInQueueBooking, BookingOperation.QueuePending, cancellationToken);
+            }
+            catch (KeyNotFoundException)
+            {
+                await eventRepository.OnBookingCancelledAsync(booking.EventId, cancellationToken);
+            }
+        }
+
+        var result = await bookingRepository.CancelAsync(id, cancellationToken);
         await EnqueueNotificationAsync(result, BookingOperation.Canceled, cancellationToken);
 
         return result;

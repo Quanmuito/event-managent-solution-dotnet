@@ -31,4 +31,35 @@ public class EventRepository(MongoDbContext mongoDbContext) : Repository<Event>(
         var combinedFilter = Builders<Event>.Filter.Or(filters);
         return await Collection.Find(combinedFilter).ToListAsync(cancellationToken);
     }
+
+    public async Task<Event> OnBookingRegisteredAsync(string id, CancellationToken cancellationToken)
+    {
+        var filter = Builders<Event>.Filter.And(
+            Builders<Event>.Filter.Eq(e => e.Id, id),
+            Builders<Event>.Filter.Gt(e => e.Available, 0)
+        );
+
+        var update = Builders<Event>.Update
+            .Inc(e => e.Available, -1)
+            .Set(e => e.UpdatedAt, DateTime.UtcNow);
+
+        var options = new FindOneAndUpdateOptions<Event>
+        {
+            ReturnDocument = ReturnDocument.After
+        };
+
+        var result = await Collection.FindOneAndUpdateAsync(filter, update, options, cancellationToken);
+
+        return result ?? throw new InvalidOperationException($"Cannot decrement availability for event '{id}': No available seats or event not found.");
+    }
+
+    public async Task<Event> OnBookingCancelledAsync(string id, CancellationToken cancellationToken)
+    {
+        var _event = await GetByIdAsync(id, cancellationToken);
+        var updateDefinition = Builders<Event>.Update
+            .Inc(q => q.Available, 1)
+            .Set(q => q.UpdatedAt, DateTime.UtcNow);
+
+        return await UpdateAsync(id, updateDefinition, cancellationToken);
+    }
 }

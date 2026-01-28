@@ -18,6 +18,10 @@ public class CreateEventDto : IValidatableObject
     public string? Details { get; set; }
 
     [Required]
+    [Range(0, int.MaxValue, ErrorMessage = "Available must be a non-negative number.")]
+    public int Available { get; set; }
+
+    [Required]
     public DateTime TimeStart { get; set; }
 
     [Required]

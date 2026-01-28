@@ -14,6 +14,9 @@ public class UpdateEventDto : IValidatableObject
     [StringLength(2000, ErrorMessage = "Details cannot exceed 2000 characters.")]
     public string? Details { get; set; }
 
+    [Range(0, int.MaxValue, ErrorMessage = "Available must be a non-negative number.")]
+    public int? Available { get; set; }
+
     public DateTime? TimeStart { get; set; }
 
     public DateTime? TimeEnd { get; set; }

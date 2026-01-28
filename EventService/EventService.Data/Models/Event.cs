@@ -22,6 +22,9 @@ public class Event
     [BsonIgnoreIfNull]
     public string? Details { get; set; }
 
+    [BsonElement("available")]
+    public int Available { get; set; }
+
     [BsonElement("timeStart")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime TimeStart { get; set; }

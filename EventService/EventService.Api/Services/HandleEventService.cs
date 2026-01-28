@@ -27,6 +27,7 @@ public class HandleEventService(IEventRepository eventRepository)
             HostedBy = createDto.HostedBy,
             IsPublic = createDto.IsPublic,
             Details = createDto.Details,
+            Available = createDto.Available,
             TimeStart = createDto.TimeStart,
             TimeEnd = createDto.TimeEnd,
             CreatedAt = DateTime.UtcNow
@@ -49,6 +50,9 @@ public class HandleEventService(IEventRepository eventRepository)
 
         if (updateDto.Details != null)
             updates.Add(Builders<Event>.Update.Set(e => e.Details, updateDto.Details));
+
+        if (updateDto.Available.HasValue)
+            updates.Add(Builders<Event>.Update.Set(e => e.Available, updateDto.Available.Value));
 
         if (updateDto.TimeStart.HasValue)
             updates.Add(Builders<Event>.Update.Set(e => e.TimeStart, updateDto.TimeStart.Value));
