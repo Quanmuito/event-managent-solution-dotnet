@@ -1,6 +1,7 @@
 namespace BookingService.Api.Tests.Services.HandleBookingService;
 
 using BookingService.Api.Messages;
+using BookingService.Api.Utils;
 using BookingService.Data.Models;
 using BookingService.Data.Utils;
 using BookingService.Tests.Helpers;
@@ -20,7 +21,6 @@ public class HandleBookingServiceStatusChangeTests : IClassFixture<HandleBooking
     }
 
     [Theory]
-    [InlineData("registered")]
     [InlineData("queue_enrolled")]
     [InlineData("queue_pending")]
     public async Task Cancel_WithValidStatus_ShouldCancelSuccessfully(string initialStatus)
@@ -31,8 +31,6 @@ public class HandleBookingServiceStatusChangeTests : IClassFixture<HandleBooking
 
         _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(booking);
-        _fixture.MockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<MongoDB.Driver.UpdateDefinition<Booking>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(canceledBooking);
         _fixture.MockRepository.Setup(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(canceledBooking);
 
@@ -41,6 +39,58 @@ public class HandleBookingServiceStatusChangeTests : IClassFixture<HandleBooking
         result.Should().NotBeNull();
         result.Status.Should().Be(BookingStatus.Canceled);
         result.UpdatedAt.Should().NotBeNull();
+        _fixture.MockRepository.Verify(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Cancel_WithRegisteredStatus_ShouldPromoteQueueBooking()
+    {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Registered);
+        var promotedBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439012", BookingStatus.QueuePending);
+        promotedBooking.EventId = booking.EventId;
+        var canceledBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Canceled);
+        canceledBooking.UpdatedAt = DateTime.UtcNow;
+
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
+        _fixture.MockRepository.Setup(x => x.PromoteInQueueAsync(booking.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(promotedBooking);
+        _fixture.MockRepository.Setup(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(canceledBooking);
+
+        var result = await _fixture.Service.Cancel("507f1f77bcf86cd799439011", CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Status.Should().Be(BookingStatus.Canceled);
+        _fixture.MockRepository.Verify(x => x.PromoteInQueueAsync(booking.EventId, It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockRepository.Verify(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.VerifyNotifications("507f1f77bcf86cd799439012", BookingOperation.QueuePending);
+        _fixture.VerifyNotifications("507f1f77bcf86cd799439011", BookingOperation.Canceled);
+    }
+
+    [Fact]
+    public async Task Cancel_WithRegisteredStatusAndNoQueueBooking_ShouldIncrementEventAvailability()
+    {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Registered);
+        var eventEntity = new EventService.Data.Models.Event { Id = booking.EventId, Available = 5 };
+        var canceledBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Canceled);
+        canceledBooking.UpdatedAt = DateTime.UtcNow;
+
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
+        _fixture.MockRepository.Setup(x => x.PromoteInQueueAsync(booking.EventId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new KeyNotFoundException($"No booking found in queue for event '{booking.EventId}'."));
+        _fixture.MockEventRepository.Setup(x => x.OnBookingCancelledAsync(booking.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventEntity);
+        _fixture.MockRepository.Setup(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(canceledBooking);
+
+        var result = await _fixture.Service.Cancel("507f1f77bcf86cd799439011", CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Status.Should().Be(BookingStatus.Canceled);
+        _fixture.MockRepository.Verify(x => x.PromoteInQueueAsync(booking.EventId, It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockEventRepository.Verify(x => x.OnBookingCancelledAsync(booking.EventId, It.IsAny<CancellationToken>()), Times.Once);
         _fixture.MockRepository.Verify(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -63,7 +113,7 @@ public class HandleBookingServiceStatusChangeTests : IClassFixture<HandleBooking
     [Fact]
     public async Task Cancel_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
-        _fixture.MockRepository.Setup(x => x.CancelAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new KeyNotFoundException("Bookings with ID '507f1f77bcf86cd799439999' was not found."));
 
         var act = async () => await _fixture.Service.Cancel("507f1f77bcf86cd799439999", CancellationToken.None);
@@ -75,7 +125,7 @@ public class HandleBookingServiceStatusChangeTests : IClassFixture<HandleBooking
     [Fact]
     public async Task Cancel_WithInvalidFormatId_ShouldThrowFormatException()
     {
-        _fixture.MockRepository.Setup(x => x.CancelAsync("invalid-id", It.IsAny<CancellationToken>()))
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("invalid-id", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
         var act = async () => await _fixture.Service.Cancel("invalid-id", CancellationToken.None);

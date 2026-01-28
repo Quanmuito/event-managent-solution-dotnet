@@ -106,4 +106,26 @@ public class CreateEventDtoTests
         isValid.Should().BeTrue();
         results.Should().BeEmpty();
     }
+
+    [Fact]
+    public void Validate_WithNegativeAvailable_ShouldReturnValidationError()
+    {
+        var dto = TestDataBuilder.CreateValidCreateEventDto();
+        dto.Available = -1;
+        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
+
+        isValid.Should().BeFalse();
+        results.Should().Contain(r => r.ErrorMessage == "Available must be a non-negative number.");
+    }
+
+    [Fact]
+    public void Validate_WithZeroAvailable_ShouldReturnNoValidationError()
+    {
+        var dto = TestDataBuilder.CreateValidCreateEventDto();
+        dto.Available = 0;
+        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
+
+        isValid.Should().BeTrue();
+        results.Should().BeEmpty();
+    }
 }

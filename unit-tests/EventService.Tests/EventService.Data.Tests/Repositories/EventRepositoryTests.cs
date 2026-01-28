@@ -186,4 +186,111 @@ public class EventRepositoryTests : RepositoryTestBase<Event, EventRepository>
 
         result.Should().HaveCount(1);
     }
+
+    [Fact]
+    public async Task OnBookingRegisteredAsync_WithAvailableSeats_ShouldDecrementAvailability()
+    {
+        var eventId = GetValidEntityId();
+        var eventEntity = TestDataBuilder.CreateEvent(eventId);
+        eventEntity.Available = 10;
+        var updatedEvent = TestDataBuilder.CreateEvent(eventId);
+        updatedEvent.Available = 9;
+        updatedEvent.UpdatedAt = DateTime.UtcNow;
+
+        MockCollection.Setup(x => x.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<Event>>(),
+                It.IsAny<UpdateDefinition<Event>>(),
+                It.IsAny<FindOneAndUpdateOptions<Event>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedEvent);
+
+        var result = await Repository.OnBookingRegisteredAsync(eventId, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Available.Should().Be(9);
+        result.UpdatedAt.Should().NotBeNull();
+        MockCollection.Verify(x => x.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<Event>>(),
+            It.IsAny<UpdateDefinition<Event>>(),
+            It.IsAny<FindOneAndUpdateOptions<Event>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task OnBookingRegisteredAsync_WithNoAvailableSeats_ShouldThrowInvalidOperationException()
+    {
+        var eventId = GetValidEntityId();
+
+#pragma warning disable CS8620
+        MockCollection.Setup(x => x.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<Event>>(),
+                It.IsAny<UpdateDefinition<Event>>(),
+                It.IsAny<FindOneAndUpdateOptions<Event>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Event?)null);
+#pragma warning restore CS8620
+
+        var act = async () => await Repository.OnBookingRegisteredAsync(eventId, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage($"Cannot decrement availability for event '{eventId}': No available seats or event not found.");
+    }
+
+    [Fact]
+    public async Task OnBookingRegisteredAsync_WithNonExistentEvent_ShouldThrowInvalidOperationException()
+    {
+        var eventId = GetNonExistentEntityId();
+
+#pragma warning disable CS8620
+        MockCollection.Setup(x => x.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<Event>>(),
+                It.IsAny<UpdateDefinition<Event>>(),
+                It.IsAny<FindOneAndUpdateOptions<Event>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Event?)null);
+#pragma warning restore CS8620
+
+        var act = async () => await Repository.OnBookingRegisteredAsync(eventId, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage($"Cannot decrement availability for event '{eventId}': No available seats or event not found.");
+    }
+
+    [Fact]
+    public async Task OnBookingCancelledAsync_WithValidId_ShouldIncrementAvailability()
+    {
+        var eventId = GetValidEntityId();
+        var eventEntity = TestDataBuilder.CreateEvent(eventId);
+        eventEntity.Available = 5;
+        var updatedEvent = TestDataBuilder.CreateEvent(eventId);
+        updatedEvent.Available = 6;
+        updatedEvent.UpdatedAt = DateTime.UtcNow;
+
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, eventEntity);
+        MockCollection.Setup(x => x.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<Event>>(),
+                It.IsAny<UpdateDefinition<Event>>(),
+                It.IsAny<FindOneAndUpdateOptions<Event>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedEvent);
+
+        var result = await Repository.OnBookingCancelledAsync(eventId, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Available.Should().Be(6);
+        result.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task OnBookingCancelledAsync_WithNonExistentId_ShouldThrowKeyNotFoundException()
+    {
+        var eventId = GetNonExistentEntityId();
+
+        MongoDbMockHelper.SetupFindFirstOrDefaultAsync(MockCollection, null);
+
+        var act = async () => await Repository.OnBookingCancelledAsync(eventId, CancellationToken.None);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage($"Events with ID '{eventId}' was not found.");
+    }
 }

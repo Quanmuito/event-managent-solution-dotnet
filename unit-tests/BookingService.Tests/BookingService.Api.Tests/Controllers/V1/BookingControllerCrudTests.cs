@@ -88,8 +88,11 @@ public class BookingControllerCrudTests : IClassFixture<BookingControllerTestFix
     {
         var createDto = TestDataBuilder.CreateValidCreateBookingDto();
         var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
+        var eventEntity = new Event { Id = createDto.EventId, Available = 10 };
         _fixture.MockEventRepository.Setup(x => x.GetByIdAsync(createDto.EventId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Event { Id = createDto.EventId });
+            .ReturnsAsync(eventEntity);
+        _fixture.MockEventRepository.Setup(x => x.OnBookingRegisteredAsync(createDto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventEntity);
         ControllerTestSetupHelper.SetupMockRepositoryForCreate(_fixture.MockRepository, createdBooking);
 
         var result = await _fixture.Controller.Create(createDto, CancellationToken.None);
@@ -146,8 +149,11 @@ public class BookingControllerCrudTests : IClassFixture<BookingControllerTestFix
     public async Task Create_WithException_ShouldThrowException()
     {
         var createDto = TestDataBuilder.CreateValidCreateBookingDto();
+        var eventEntity = new Event { Id = createDto.EventId, Available = 10 };
         _fixture.MockEventRepository.Setup(x => x.GetByIdAsync(createDto.EventId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Event { Id = createDto.EventId });
+            .ReturnsAsync(eventEntity);
+        _fixture.MockEventRepository.Setup(x => x.OnBookingRegisteredAsync(createDto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventEntity);
         ControllerTestSetupHelper.SetupMockRepositoryForCreateThrows<IBookingRepository, Booking>(_fixture.MockRepository, new Exception("Database error"));
 
         await ControllerTestHelper.AssertExceptionThrown<Exception>(

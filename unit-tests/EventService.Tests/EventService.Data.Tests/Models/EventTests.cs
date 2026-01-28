@@ -16,6 +16,7 @@ public class EventTests
             HostedBy = dto.HostedBy,
             IsPublic = dto.IsPublic,
             Details = dto.Details,
+            Available = dto.Available,
             TimeStart = dto.TimeStart,
             TimeEnd = dto.TimeEnd,
             CreatedAt = DateTime.UtcNow,
@@ -38,6 +39,7 @@ public class EventTests
         result.HostedBy.Should().Be(dto.HostedBy);
         result.IsPublic.Should().Be(dto.IsPublic);
         result.Details.Should().Be(dto.Details);
+        result.Available.Should().Be(dto.Available);
         result.TimeStart.Should().Be(dto.TimeStart);
         result.TimeEnd.Should().Be(dto.TimeEnd);
         result.CreatedAt.Should().BeOnOrAfter(beforeCreation);

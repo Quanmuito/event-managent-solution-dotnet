@@ -30,7 +30,7 @@ public class HandleEventServiceCrudTests : IClassFixture<HandleEventServiceTestF
 
         result.Should().NotBeNull();
         result.Should().BeOfType<EventDto>();
-        ServiceTestHelper.AssertDtoMatchesEntity(result, eventEntity, "Id", "Title", "HostedBy", "IsPublic", "Details", "TimeStart", "TimeEnd", "CreatedAt", "UpdatedAt");
+        ServiceTestHelper.AssertDtoMatchesEntity(result, eventEntity, "Id", "Title", "HostedBy", "IsPublic", "Details", "Available", "TimeStart", "TimeEnd", "CreatedAt", "UpdatedAt");
     }
 
     [Fact]
@@ -66,6 +66,7 @@ public class HandleEventServiceCrudTests : IClassFixture<HandleEventServiceTestF
         createdEvent.HostedBy = dto.HostedBy;
         createdEvent.IsPublic = dto.IsPublic;
         createdEvent.Details = dto.Details;
+        createdEvent.Available = dto.Available;
         createdEvent.TimeStart = dto.TimeStart;
         createdEvent.TimeEnd = dto.TimeEnd;
 
@@ -79,6 +80,7 @@ public class HandleEventServiceCrudTests : IClassFixture<HandleEventServiceTestF
         result.HostedBy.Should().Be(dto.HostedBy);
         result.IsPublic.Should().Be(dto.IsPublic);
         result.Details.Should().Be(dto.Details);
+        result.Available.Should().Be(dto.Available);
         result.TimeStart.Should().Be(dto.TimeStart);
         result.TimeEnd.Should().Be(dto.TimeEnd);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
@@ -87,6 +89,7 @@ public class HandleEventServiceCrudTests : IClassFixture<HandleEventServiceTestF
             e.HostedBy == dto.HostedBy &&
             e.IsPublic == dto.IsPublic &&
             e.Details == dto.Details &&
+            e.Available == dto.Available &&
             e.TimeStart == dto.TimeStart &&
             e.TimeEnd == dto.TimeEnd), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -100,6 +103,7 @@ public class HandleEventServiceCrudTests : IClassFixture<HandleEventServiceTestF
         updatedEvent.HostedBy = updateDto.HostedBy!;
         updatedEvent.IsPublic = updateDto.IsPublic!.Value;
         updatedEvent.Details = updateDto.Details;
+        updatedEvent.Available = updateDto.Available!.Value;
         updatedEvent.TimeStart = updateDto.TimeStart!.Value;
         updatedEvent.TimeEnd = updateDto.TimeEnd!.Value;
         updatedEvent.UpdatedAt = DateTime.UtcNow;
@@ -114,6 +118,7 @@ public class HandleEventServiceCrudTests : IClassFixture<HandleEventServiceTestF
         result.HostedBy.Should().Be(updateDto.HostedBy);
         result.IsPublic.Should().Be(updateDto.IsPublic!.Value);
         result.Details.Should().Be(updateDto.Details);
+        result.Available.Should().Be(updateDto.Available!.Value);
         result.TimeStart.Should().Be(updateDto.TimeStart);
         result.TimeEnd.Should().Be(updateDto.TimeEnd);
         result.UpdatedAt.Should().NotBeNull();
@@ -172,6 +177,24 @@ public class HandleEventServiceCrudTests : IClassFixture<HandleEventServiceTestF
 
         result.Should().NotBeNull();
         result.Title.Should().Be("New Title");
+        result.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Update_WithAvailableField_ShouldUpdateAvailable()
+    {
+        var updateDto = new UpdateEventDto { Available = 75 };
+        var updatedEvent = TestDataBuilder.CreateEvent("507f1f77bcf86cd799439011");
+        updatedEvent.Available = 75;
+        updatedEvent.UpdatedAt = DateTime.UtcNow;
+
+        _fixture.MockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Event>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedEvent);
+
+        var result = await _fixture.Service.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Available.Should().Be(75);
         result.UpdatedAt.Should().NotBeNull();
     }
 

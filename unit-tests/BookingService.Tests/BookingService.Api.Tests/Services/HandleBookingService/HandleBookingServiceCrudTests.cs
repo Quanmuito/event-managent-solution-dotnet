@@ -68,11 +68,14 @@ public class HandleBookingServiceCrudTests : IClassFixture<HandleBookingServiceT
     {
         var dto = TestDataBuilder.CreateValidCreateBookingDto();
         dto.Status = BookingStatus.Registered;
+        var eventEntity = new Event { Id = dto.EventId, Available = 10 };
         var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
         createdBooking.Status = dto.Status;
 
         _fixture.MockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Event { Id = dto.EventId });
+            .ReturnsAsync(eventEntity);
+        _fixture.MockEventRepository.Setup(x => x.OnBookingRegisteredAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventEntity);
         _fixture.MockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -88,6 +91,7 @@ public class HandleBookingServiceCrudTests : IClassFixture<HandleBookingServiceT
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         _fixture.MockRepository.Verify(x => x.CreateAsync(It.Is<Booking>(b =>
             b.Status == BookingStatus.Registered), It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockEventRepository.Verify(x => x.OnBookingRegisteredAsync(dto.EventId, It.IsAny<CancellationToken>()), Times.Once);
         _fixture.MockQrCodeTaskQueue.Verify(x => x.EnqueueAsync(
             It.Is<QrCodeTaskMessage>(m => m.BookingId == "507f1f77bcf86cd799439011"),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -98,11 +102,12 @@ public class HandleBookingServiceCrudTests : IClassFixture<HandleBookingServiceT
     {
         var dto = TestDataBuilder.CreateValidCreateBookingDto();
         dto.Status = BookingStatus.QueueEnrolled;
+        var eventEntity = new Event { Id = dto.EventId, Available = 0 };
         var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
         createdBooking.Status = dto.Status;
 
         _fixture.MockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Event { Id = dto.EventId });
+            .ReturnsAsync(eventEntity);
         _fixture.MockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Booking b, CancellationToken ct) =>
             {
@@ -124,6 +129,39 @@ public class HandleBookingServiceCrudTests : IClassFixture<HandleBookingServiceT
     }
 
     [Fact]
+    public async Task Create_WithQueueEnrolledStatusAndAvailableSeats_ShouldAutoUpgradeToRegistered()
+    {
+        var dto = TestDataBuilder.CreateValidCreateBookingDto();
+        dto.Status = BookingStatus.QueueEnrolled;
+        var eventEntity = new Event { Id = dto.EventId, Available = 5 };
+        var createdBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011");
+        createdBooking.Status = BookingStatus.Registered;
+
+        _fixture.MockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventEntity);
+        _fixture.MockEventRepository.Setup(x => x.OnBookingRegisteredAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventEntity);
+        _fixture.MockRepository.Setup(x => x.CreateAsync(It.IsAny<Booking>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Booking b, CancellationToken ct) =>
+            {
+                b.Id = "507f1f77bcf86cd799439011";
+                return b;
+            });
+
+        var result = await _fixture.Service.Create(dto, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Id.Should().Be("507f1f77bcf86cd799439011");
+        result.Status.Should().Be(BookingStatus.Registered);
+        _fixture.MockRepository.Verify(x => x.CreateAsync(It.Is<Booking>(b =>
+            b.Status == BookingStatus.Registered), It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockEventRepository.Verify(x => x.OnBookingRegisteredAsync(dto.EventId, It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockQrCodeTaskQueue.Verify(x => x.EnqueueAsync(
+            It.Is<QrCodeTaskMessage>(m => m.BookingId == "507f1f77bcf86cd799439011"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Create_WhenEventDoesNotExist_ShouldThrowKeyNotFoundException()
     {
         var dto = TestDataBuilder.CreateValidCreateBookingDto();
@@ -134,6 +172,24 @@ public class HandleBookingServiceCrudTests : IClassFixture<HandleBookingServiceT
 
         await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage($"Events with ID '{dto.EventId}' was not found.");
+    }
+
+    [Fact]
+    public async Task Create_WithRegisteredStatusAndNoAvailableSeats_ShouldThrowInvalidOperationException()
+    {
+        var dto = TestDataBuilder.CreateValidCreateBookingDto();
+        dto.Status = BookingStatus.Registered;
+        var eventEntity = new Event { Id = dto.EventId, Available = 0 };
+
+        _fixture.MockEventRepository.Setup(x => x.GetByIdAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventEntity);
+        _fixture.MockEventRepository.Setup(x => x.OnBookingRegisteredAsync(dto.EventId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException($"Cannot decrement availability for event '{dto.EventId}': No available seats or event not found."));
+
+        var act = async () => await _fixture.Service.Create(dto, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Booking registration failed: No available seats for the event.");
     }
 
 

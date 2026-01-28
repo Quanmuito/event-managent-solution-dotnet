@@ -20,6 +20,7 @@ public class EventDtoTests
         result.HostedBy.Should().Be(eventEntity.HostedBy);
         result.IsPublic.Should().Be(eventEntity.IsPublic);
         result.Details.Should().Be(eventEntity.Details);
+        result.Available.Should().Be(eventEntity.Available);
         result.TimeStart.Should().Be(eventEntity.TimeStart);
         result.TimeEnd.Should().Be(eventEntity.TimeEnd);
         result.CreatedAt.Should().Be(eventEntity.CreatedAt);
@@ -82,6 +83,7 @@ public class EventDtoTests
         result.HostedBy.Should().Be("Test Host");
         result.IsPublic.Should().BeFalse();
         result.Details.Should().Be("Test Details");
+        result.Available.Should().Be(eventEntity.Available);
         result.TimeStart.Should().Be(eventEntity.TimeStart);
         result.TimeEnd.Should().Be(eventEntity.TimeEnd);
         result.CreatedAt.Should().Be(eventEntity.CreatedAt);

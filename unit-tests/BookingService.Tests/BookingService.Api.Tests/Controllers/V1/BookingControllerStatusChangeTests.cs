@@ -23,9 +23,12 @@ public class BookingControllerStatusChangeTests : IClassFixture<BookingControlle
     [Fact]
     public async Task Cancel_WithValidId_ShouldReturnOk()
     {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.QueueEnrolled);
         var canceledBooking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Canceled);
         canceledBooking.UpdatedAt = DateTime.UtcNow;
 
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
         _fixture.MockRepository.Setup(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(canceledBooking);
 
@@ -46,7 +49,7 @@ public class BookingControllerStatusChangeTests : IClassFixture<BookingControlle
     [Fact]
     public async Task Cancel_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
-        _fixture.MockRepository.Setup(x => x.CancelAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new KeyNotFoundException("Bookings with ID '507f1f77bcf86cd799439999' was not found."));
 
         await ControllerTestHelper.AssertExceptionThrown<KeyNotFoundException>(
@@ -57,6 +60,9 @@ public class BookingControllerStatusChangeTests : IClassFixture<BookingControlle
     [Fact]
     public async Task Cancel_WithAlreadyCanceledBooking_ShouldThrowInvalidOperationException()
     {
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.Canceled);
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
         _fixture.MockRepository.Setup(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Booking is already canceled."));
 
@@ -68,7 +74,7 @@ public class BookingControllerStatusChangeTests : IClassFixture<BookingControlle
     [Fact]
     public async Task Cancel_WithInvalidFormatId_ShouldThrowFormatException()
     {
-        _fixture.MockRepository.Setup(x => x.CancelAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("invalid-id", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
 
         await ControllerTestHelper.AssertExceptionThrown<FormatException>(
@@ -79,7 +85,10 @@ public class BookingControllerStatusChangeTests : IClassFixture<BookingControlle
     [Fact]
     public async Task Cancel_WithException_ShouldThrowException()
     {
-        _fixture.MockRepository.Setup(x => x.CancelAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        var booking = TestDataBuilder.CreateBooking("507f1f77bcf86cd799439011", BookingStatus.QueueEnrolled);
+        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
+        _fixture.MockRepository.Setup(x => x.CancelAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         await ControllerTestHelper.AssertExceptionThrown<Exception>(

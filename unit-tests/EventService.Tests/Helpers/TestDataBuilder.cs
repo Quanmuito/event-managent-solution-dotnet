@@ -13,6 +13,7 @@ public static class TestDataBuilder
             HostedBy = "Test Host",
             IsPublic = true,
             Details = "Test event details",
+            Available = 100,
             TimeStart = DateTime.UtcNow.AddDays(1),
             TimeEnd = DateTime.UtcNow.AddDays(2)
         };
@@ -26,6 +27,7 @@ public static class TestDataBuilder
             HostedBy = "Test Host",
             IsPublic = true,
             Details = "Test event details",
+            Available = 100,
             TimeStart = DateTime.UtcNow.AddDays(2),
             TimeEnd = DateTime.UtcNow.AddDays(1)
         };
@@ -39,6 +41,7 @@ public static class TestDataBuilder
             HostedBy = "Updated Host",
             IsPublic = false,
             Details = "Updated details",
+            Available = 50,
             TimeStart = DateTime.UtcNow.AddDays(3),
             TimeEnd = DateTime.UtcNow.AddDays(4)
         };
@@ -63,6 +66,7 @@ public static class TestDataBuilder
             HostedBy = "Test Host",
             IsPublic = true,
             Details = details,
+            Available = 100,
             TimeStart = DateTime.UtcNow.AddDays(1),
             TimeEnd = DateTime.UtcNow.AddDays(2),
             CreatedAt = DateTime.UtcNow,

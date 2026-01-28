@@ -12,6 +12,7 @@ public class UpdateEventDtoTests
         string? title = null,
         string? hostedBy = null,
         string? details = null,
+        int? available = null,
         DateTime? timeStart = null,
         DateTime? timeEnd = null)
     {
@@ -20,6 +21,7 @@ public class UpdateEventDtoTests
             Title = title,
             HostedBy = hostedBy,
             Details = details,
+            Available = available,
             TimeStart = timeStart,
             TimeEnd = timeEnd
         };
@@ -128,5 +130,35 @@ public class UpdateEventDtoTests
 
         isValid.Should().BeFalse();
         results.Should().Contain(r => r.ErrorMessage == "Details cannot exceed 2000 characters.");
+    }
+
+    [Fact]
+    public void Validate_WithNegativeAvailable_ShouldReturnValidationError()
+    {
+        var dto = CreateDto(available: -1);
+        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
+
+        isValid.Should().BeFalse();
+        results.Should().Contain(r => r.ErrorMessage == "Available must be a non-negative number.");
+    }
+
+    [Fact]
+    public void Validate_WithZeroAvailable_ShouldReturnNoValidationError()
+    {
+        var dto = CreateDto(available: 0);
+        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
+
+        isValid.Should().BeTrue();
+        results.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_WithNullAvailable_ShouldReturnNoValidationError()
+    {
+        var dto = CreateDto(available: null);
+        var (isValid, results) = ValidationTestHelper.ValidateObject(dto);
+
+        isValid.Should().BeTrue();
+        results.Should().BeEmpty();
     }
 }
