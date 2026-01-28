@@ -43,6 +43,7 @@ GET /v1/events/search?query=conference,tech,2024
     "hostedBy": "Tech Corp",
     "isPublic": true,
     "details": "Annual technology conference",
+    "available": 50,
     "timeStart": "2024-06-01T09:00:00Z",
     "timeEnd": "2024-06-01T17:00:00Z",
     "createdAt": "2024-01-01T10:00:00Z",
@@ -80,6 +81,7 @@ GET /v1/events/507f1f77bcf86cd799439011
   "hostedBy": "Tech Corp",
   "isPublic": true,
   "details": "Annual technology conference",
+  "available": 50,
   "timeStart": "2024-06-01T09:00:00Z",
   "timeEnd": "2024-06-01T17:00:00Z",
   "createdAt": "2024-01-01T10:00:00Z",
@@ -99,6 +101,7 @@ Create a new event.
   "hostedBy": "string (required, 1-100 characters)",
   "isPublic": boolean (optional, defaults to false),
   "details": "string (optional, max 2000 characters)",
+  "available": "integer (required, non-negative)",
   "timeStart": "DateTime (required, ISO 8601 format)",
   "timeEnd": "DateTime (required, ISO 8601 format)"
 }
@@ -110,6 +113,7 @@ Create a new event.
 - `hostedBy`: Required, 1-100 characters
 - `isPublic`: Optional, defaults to `false`
 - `details`: Optional, max 2000 characters
+- `available`: Required, must be a non-negative integer (represents number of available seats)
 
 **Response Codes:**
 - `201 Created`: Success - Returns created event with location header
@@ -126,6 +130,7 @@ Content-Type: application/json
   "hostedBy": "Tech Corp",
   "isPublic": true,
   "details": "Annual technology conference",
+  "available": 50,
   "timeStart": "2024-06-01T09:00:00Z",
   "timeEnd": "2024-06-01T17:00:00Z"
 }
@@ -139,6 +144,7 @@ Content-Type: application/json
   "hostedBy": "Tech Corp",
   "isPublic": true,
   "details": "Annual technology conference",
+  "available": 50,
   "timeStart": "2024-06-01T09:00:00Z",
   "timeEnd": "2024-06-01T17:00:00Z",
   "createdAt": "2024-01-01T10:00:00Z",
@@ -161,6 +167,7 @@ Update an existing event. All fields are optional for partial updates.
   "hostedBy": "string (optional, 1-100 characters)",
   "isPublic": boolean (optional),
   "details": "string (optional, max 2000 characters)",
+  "available": "integer (optional, non-negative)",
   "timeStart": "DateTime (optional, ISO 8601 format)",
   "timeEnd": "DateTime (optional, ISO 8601 format)"
 }
@@ -170,6 +177,7 @@ Update an existing event. All fields are optional for partial updates.
 - If both `timeStart` and `timeEnd` are provided, `timeStart` must be before `timeEnd`
 - At least one field must be provided
 - All fields are optional, but at least one must be provided for the update to be valid
+- `available`: If provided, must be a non-negative integer
 
 **Response Codes:**
 - `200 OK`: Success - Returns updated event
@@ -196,6 +204,7 @@ Content-Type: application/json
   "hostedBy": "Tech Corp",
   "isPublic": false,
   "details": "Annual technology conference",
+  "available": 50,
   "timeStart": "2024-06-01T09:00:00Z",
   "timeEnd": "2024-06-01T17:00:00Z",
   "createdAt": "2024-01-01T10:00:00Z",
@@ -332,7 +341,11 @@ Content-Type: application/json
 }
 ```
 
-**Note:** When a booking is created with `registered` status, a QR code generation task is automatically queued and notification tasks are enqueued. When a booking is created with `queue_enrolled` status, notification tasks are enqueued. The QR code will be available in subsequent GET requests once generation is complete.
+**Note:** 
+- When a booking is created with `queue_enrolled` status but the event has available seats (`available > 0`), the booking is automatically promoted to `registered` status.
+- When a booking is created with `registered` status, a QR code generation task is automatically queued and notification tasks are enqueued.
+- When a booking is created with `queue_enrolled` status, notification tasks are enqueued.
+- The QR code will be available in subsequent GET requests once generation is complete.
 
 #### Update Booking
 **PATCH** `/v1/bookings/{id}`
@@ -345,7 +358,6 @@ Update an existing booking. All fields are optional for partial updates.
 **Request Body:**
 ```json
 {
-  "status": "string (optional, 'registered', 'canceled', 'queue_enrolled', or 'queue_pending')",
   "name": "string (optional, 1-100 characters)",
   "email": "string (optional, valid email address)",
   "phone": "string (optional, max 20 characters)"
@@ -354,7 +366,7 @@ Update an existing booking. All fields are optional for partial updates.
 
 **Validation Rules:**
 - At least one field must be provided
-- `status`: If provided, must be one of: `registered`, `canceled`, `queue_enrolled`, or `queue_pending`
+- `status` field is not allowed in update requests (use `Confirm` or `Cancel` endpoints to change status)
 - `name`: If provided, 1-100 characters
 - `email`: If provided, must be a valid email address
 - `phone`: If provided, maximum 20 characters
@@ -373,8 +385,8 @@ PATCH /v1/bookings/507f1f77bcf86cd799439011
 Content-Type: application/json
 
 {
-  "status": "canceled",
-  "name": "Jane Doe"
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com"
 }
 ```
 
@@ -383,9 +395,9 @@ Content-Type: application/json
 {
   "id": "507f1f77bcf86cd799439011",
   "eventId": "507f1f77bcf86cd799439012",
-  "status": "canceled",
+  "status": "registered",
   "name": "Jane Doe",
-  "email": "john.doe@example.com",
+  "email": "jane.doe@example.com",
   "phone": "1234567890",
   "createdAt": "2024-01-01T10:00:00Z",
   "updatedAt": "2024-01-02T12:00:00Z",
@@ -407,7 +419,7 @@ Confirm a booking that is in queue. Only bookings with status `queue_pending` ca
 - `404 Not Found`: Booking not found
 - `500 Internal Server Error`: Server error
 
-**Note:** When a booking is confirmed, its status changes from `queue_pending` to `registered`, a QR code generation task is automatically queued, and notification tasks are enqueued.
+**Note:** When a booking is confirmed, its status changes from `queue_pending` to `registered`, a QR code generation task is automatically queued, and notification tasks are enqueued. The event's available seat count is atomically decremented.
 
 **Example Request:**
 ```
@@ -444,7 +456,11 @@ Cancel an existing booking. Only bookings with status `registered`, `queue_enrol
 - `404 Not Found`: Booking not found
 - `500 Internal Server Error`: Server error
 
-**Note:** When a booking is canceled, notification tasks are automatically enqueued. Only bookings with status `registered`, `queue_enrolled`, or `queue_pending` can be canceled.
+**Note:** 
+- When a booking is canceled, notification tasks are automatically enqueued.
+- Only bookings with status `registered`, `queue_enrolled`, or `queue_pending` can be canceled.
+- If a `registered` booking is canceled and there are bookings in the queue, the first booking in the queue is automatically promoted to `queue_pending` status and a notification is sent.
+- If a `registered` booking is canceled and there are no bookings in the queue, the event's available seat count is incremented.
 
 **Example Request:**
 ```

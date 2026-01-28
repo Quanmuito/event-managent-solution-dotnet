@@ -72,6 +72,8 @@ This is a microservices-based event management system built with .NET 9.0, follo
 
 1. **API Layer**: Controllers receive HTTP requests with API versioning (`/v1/events`, `/v1/bookings`)
 2. **Service Layer**: Business logic services handle DTO mapping, validation, and orchestration
+   - Booking creation automatically promotes `queue_enrolled` to `registered` if event has available seats
+   - Event availability is atomically decremented/incremented via `OnBookingRegisteredAsync`/`OnBookingCancelledAsync`
 3. **Task Queueing**: Background tasks are enqueued via `ITaskQueue<T>` for asynchronous processing:
    - QR code generation tasks (`QrCodeTaskMessage`)
    - Email notification tasks (`EmailNotificationTaskMessage<BookingDto>`)
@@ -81,6 +83,8 @@ This is a microservices-based event management system built with .NET 9.0, follo
    - **BookingEmailNotificationTaskProcessor**: Extends `EmailNotificationTaskProcessor`, sends email notifications with booking and event details via `IEmailService`
    - **BookingPhoneNotificationTaskProcessor**: Extends `PhoneNotificationTaskProcessor`, sends phone notifications via `IPhoneService`
 5. **Repository Layer**: Repositories interact with `DatabaseService` using the generic repository pattern
+   - Event repository manages availability atomically to prevent overbooking
+   - Booking repository handles queue promotion when registered bookings are canceled
 6. **Database Layer**: `DatabaseService` manages MongoDB connections, provides `MongoDbContext`, and implements generic CRUD operations
 7. **External Services**: Notification services use AWS SES (via LocalStack in development) for sending emails
 
@@ -133,19 +137,20 @@ This is a microservices-based event management system built with .NET 9.0, follo
     - Search supports comma-separated keywords with case-insensitive matching in title and details
     - Uses `HandleEventService` for business logic
   - **EventService.Data**: Data access layer
-    - `Event` model with MongoDB attributes
-    - `IEventRepository` and `EventRepository` with custom search functionality
+    - `Event` model with MongoDB attributes including `Available` field for seat management
+    - `IEventRepository` and `EventRepository` with custom search functionality and booking management methods (`OnBookingRegisteredAsync`, `OnBookingCancelledAsync`)
     - Extends generic `Repository<Event>` from DatabaseService
 
 - **BookingService**: Manages booking lifecycle with integrated notifications:
   - **BookingService.Api**: RESTful API with versioning (`/v1/bookings`)
     - Endpoints: GetById, Create, Update, Confirm, Cancel, Delete
     - Validates event existence before creating bookings
+    - Automatically promotes `queue_enrolled` bookings to `registered` if event has available seats
     - Uses `HandleBookingService` for business logic
-    - Integrates with EventService.Data to fetch event details for notifications
+    - Integrates with EventService.Data to fetch event details and manage event availability
   - **BookingService.Data**: Data access layer
     - `Booking` model with status management (`registered`, `canceled`, `queue_enrolled`, `queue_pending`)
-    - `IBookingRepository` and `BookingRepository`
+    - `IBookingRepository` and `BookingRepository` with queue promotion logic (`PromoteInQueueAsync`)
     - `IQrCodeRepository` and `QrCodeRepository` for QR code storage
   - **Background Task Processors** (three hosted services):
     - **QrCodeTaskProcessor**: Generates QR codes using QRCoder library, stores via `IQrCodeRepository`
@@ -176,7 +181,7 @@ Both API services support environment variable configuration with prefixes:
 
 ### Configuration Sections
 
-- **MongoDb**: Connection string and database name
+- **MongoDB**: Connection string and database name (configured via `MongoDbSettings` class)
 - **AWS**: AWS credentials and endpoint configuration (LocalStack endpoint for development)
 
 ## Error Handling

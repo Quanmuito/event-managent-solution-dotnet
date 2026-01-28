@@ -92,10 +92,8 @@
 - `BookingService.Api.Tests/Controllers/V1/BookingControllerCrudTests.cs` - Tests CRUD operations (`GetById`, `Create`, `Update`, `Delete`)
 - `BookingService.Api.Tests/Controllers/V1/BookingControllerStatusChangeTests.cs` - Tests status change operations (`Confirm`, `Cancel`)
 - `BookingService.Api.Tests/Controllers/V1/BookingControllerQrCodeTests.cs` - Tests QR code functionality in `GetById` method
-- `BookingService.Api.Tests/Controllers/V1/BookingControllerNotificationTests.cs` - Tests notification endpoints
 - `BookingService.Api.Tests/Services/HandleBookingService/HandleBookingServiceCrudTests.cs` - Tests CRUD operations in `HandleBookingService`
-- `BookingService.Api.Tests/Services/HandleBookingService/HandleBookingServiceStatusChangeTests.cs` - Tests status change operations (`Confirm`, `Cancel`) in service
-- `BookingService.Api.Tests/Services/HandleBookingService/HandleBookingServiceNotificationTests.cs` - Tests notification handling in service
+- `BookingService.Api.Tests/Services/HandleBookingService/HandleBookingServiceStatusChangeTests.cs` - Tests status change operations (`Confirm`, `Cancel`) including queue promotion and notification handling
 - `BookingService.Api.Tests/Services/HandleBookingService/HandleBookingServiceQrCodeTests.cs` - Tests QR code handling in service
 - `BookingService.Api.Tests/Services/HandleNotificationService/BookingEmailNotificationTaskProcessorTests.cs` - Tests `BookingEmailNotificationTaskProcessor`
 - `BookingService.Api.Tests/Services/HandleNotificationService/BookingPhoneNotificationTaskProcessorTests.cs` - Tests `BookingPhoneNotificationTaskProcessor`
@@ -111,6 +109,7 @@
 - Controller has methods: `GetById`, `Create`, `Update`, `Confirm`, `Cancel`, `Delete` - all tested
 - `GetById` method includes QR code data retrieval functionality (tested in `BookingControllerQrCodeTests`)
 - `HandleBookingService` exists in `BookingService.Api/Services/HandleBookingService.cs`
+- Notification handling is tested within status change tests (queue promotion, cancellation notifications)
 - All task processors exist:
   - `BookingEmailNotificationTaskProcessor` in `BookingService.Api/Services/HandleNotificationService/`
   - `BookingPhoneNotificationTaskProcessor` in `BookingService.Api/Services/HandleNotificationService/`

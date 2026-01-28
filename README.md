@@ -60,13 +60,9 @@ This is an on-going project for learning purpose to get an understand on <strong
     - Queue enrollment
     - Queue confirmation
     - QR code generation
+    - Triggers notification for next one in queue
 - Notification service ✅
-    - Send emails/SMS with specified content and pre-defined templates
-- Queue service
-    - Get queue length
-    - Enqueue
-    - Dequeue
-    - Triggers notification for next one
+    - Send emails/SMS with specified content
 - Auth service 
     - Authentication
     - Authorization
