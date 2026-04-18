@@ -17,4 +17,37 @@ jobs:
           dotnet-version: "9.0.x"
 
       - name: Test
-        run: dotnet test EventManagementSolution.sln --configuration Release --verbosity normal
+        run: |
+          dotnet test EventManagementSolution.sln --configuration Release --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory "${GITHUB_WORKSPACE}/TestResults" \
+            --logger "trx;LogFilePrefix=test_results"
+
+      - name: Print test result and coverage
+        if: always()
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+
+          echo "========== Code coverage (merged summary) =========="
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.4.1
+          COBERTURA_FILES="$(find "${GITHUB_WORKSPACE}" -name coverage.cobertura.xml | paste -sd ';' -)"
+          if [ -n "$COBERTURA_FILES" ]; then
+            reportgenerator "-reports:${COBERTURA_FILES}" "-targetdir:${GITHUB_WORKSPACE}/coverage-report" "-reporttypes:TextSummary"
+            cat "${GITHUB_WORKSPACE}/coverage-report/Summary.txt"
+          else
+            echo "No coverage.cobertura.xml files found."
+          fi
+
+          echo ""
+          echo "========== Test results (from TRX) =========="
+          TRX_FILES="$(find "${GITHUB_WORKSPACE}/TestResults" -name '*.trx' 2>/dev/null || true)"
+          if [ -z "$TRX_FILES" ]; then
+            echo "No TRX files found."
+          else
+            echo "$TRX_FILES" | while read -r trx; do
+              [ -z "$trx" ] && continue
+              echo "--- ${trx#$GITHUB_WORKSPACE/} ---"
+              grep -E '<ResultSummary|<Counters ' "$trx" || true
+              grep 'outcome="Failed"' "$trx" | head -80 || true
+            done
+          fi
