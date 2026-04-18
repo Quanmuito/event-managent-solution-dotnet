@@ -47,12 +47,16 @@ public class AuthRepositoryTests : RepositoryTestBase<Auth, AuthRepository>
         base.AssertEntityMatches(actual, expected);
         actual.Id.Should().Be(expected.Id);
         actual.UserId.Should().Be(expected.UserId);
+        actual.PasswordHash.Should().Be(expected.PasswordHash);
         actual.Token.Should().Be(expected.Token);
     }
 
     protected override bool AssertEntityEquals(Auth actual, Auth expected)
     {
-        return actual.Id == expected.Id && actual.UserId == expected.UserId && actual.Token == expected.Token;
+        return actual.Id == expected.Id &&
+               actual.UserId == expected.UserId &&
+               actual.PasswordHash == expected.PasswordHash &&
+               actual.Token == expected.Token;
     }
 
     [Fact]

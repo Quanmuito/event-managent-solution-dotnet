@@ -12,6 +12,9 @@ public class Auth
     [BsonElement("userId")]
     public string UserId { get; set; } = null!;
 
+    [BsonElement("passwordHash")]
+    public string PasswordHash { get; set; } = null!;
+
     [BsonElement("token")]
     public string Token { get; set; } = null!;
 

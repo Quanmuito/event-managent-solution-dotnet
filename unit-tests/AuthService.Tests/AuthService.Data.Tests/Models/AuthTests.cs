@@ -13,6 +13,7 @@ public class AuthTests
         return new Auth
         {
             UserId = dto.UserId,
+            PasswordHash = dto.PasswordHash,
             Token = dto.Token,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = null
@@ -31,6 +32,7 @@ public class AuthTests
 
         result.Should().NotBeNull();
         result.UserId.Should().Be(dto.UserId);
+        result.PasswordHash.Should().Be(dto.PasswordHash);
         result.Token.Should().Be(dto.Token);
         result.CreatedAt.Should().BeOnOrAfter(beforeCreation);
         result.CreatedAt.Should().BeOnOrBefore(afterCreation);

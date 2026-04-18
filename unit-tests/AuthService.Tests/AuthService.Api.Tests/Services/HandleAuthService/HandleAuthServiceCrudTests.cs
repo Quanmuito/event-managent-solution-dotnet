@@ -30,7 +30,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
 
         result.Should().NotBeNull();
         result.Should().BeOfType<AuthDto>();
-        ServiceTestHelper.AssertDtoMatchesEntity(result, auth, "Id", "UserId", "Token", "CreatedAt", "UpdatedAt");
+        ServiceTestHelper.AssertDtoMatchesEntity(result, auth, "Id", "UserId", "PasswordHash", "Token", "CreatedAt", "UpdatedAt");
     }
 
     [Fact]
@@ -46,10 +46,12 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
 
         result.Should().NotBeNull();
         result.UserId.Should().Be(dto.UserId);
+        result.PasswordHash.Should().Be(dto.PasswordHash);
         result.Token.Should().Be(dto.Token);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         _fixture.MockRepository.Verify(x => x.CreateAsync(It.Is<Auth>(a =>
             a.UserId == dto.UserId &&
+            a.PasswordHash == dto.PasswordHash &&
             a.Token == dto.Token), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -58,6 +60,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
     {
         var updateDto = TestDataBuilder.CreateValidUpdateAuthDto();
         var updatedAuth = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011");
+        updatedAuth.PasswordHash = updateDto.PasswordHash!;
         updatedAuth.Token = updateDto.Token!;
         updatedAuth.UpdatedAt = DateTime.UtcNow;
 
@@ -67,6 +70,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
         var result = await _fixture.Service.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
         result.Should().NotBeNull();
+        result.PasswordHash.Should().Be(updateDto.PasswordHash);
         result.Token.Should().Be(updateDto.Token);
         result.UpdatedAt.Should().NotBeNull();
         _fixture.MockRepository.Verify(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()), Times.Once);

@@ -17,6 +17,7 @@ public class AuthDtoTests
         result.Should().NotBeNull();
         result.Id.Should().Be(authEntity.Id);
         result.UserId.Should().Be(authEntity.UserId);
+        result.PasswordHash.Should().Be(authEntity.PasswordHash);
         result.Token.Should().Be(authEntity.Token);
         result.CreatedAt.Should().Be(authEntity.CreatedAt);
         result.UpdatedAt.Should().Be(authEntity.UpdatedAt);

@@ -23,6 +23,8 @@ public class CreateAuthDtoTests
     {
         var dto = new CreateAuthDto
         {
+            UserId = null!,
+            PasswordHash = "hashed-password-12345",
             Token = "test-token"
         };
 
@@ -36,12 +38,29 @@ public class CreateAuthDtoTests
     {
         var dto = new CreateAuthDto
         {
-            UserId = "507f1f77bcf86cd799439011"
+            UserId = "507f1f77bcf86cd799439011",
+            PasswordHash = "hashed-password-12345",
+            Token = null!
         };
 
         var validationResults = ValidateModel(dto);
 
         validationResults.Should().Contain(v => v.MemberNames.Contains("Token"));
+    }
+
+    [Fact]
+    public void CreateAuthDto_WithMissingPasswordHash_ShouldBeInvalid()
+    {
+        var dto = new CreateAuthDto
+        {
+            UserId = "507f1f77bcf86cd799439011",
+            PasswordHash = null!,
+            Token = "test-token"
+        };
+
+        var validationResults = ValidateModel(dto);
+
+        validationResults.Should().Contain(v => v.MemberNames.Contains("PasswordHash"));
     }
 
     private static IList<ValidationResult> ValidateModel(object model)

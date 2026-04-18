@@ -24,6 +24,7 @@ public class HandleAuthService(IAuthRepository authRepository)
         var newAuth = new Auth
         {
             UserId = createDto.UserId,
+            PasswordHash = createDto.PasswordHash,
             Token = createDto.Token,
             CreatedAt = DateTime.UtcNow
         };
@@ -33,6 +34,9 @@ public class HandleAuthService(IAuthRepository authRepository)
     public async Task<Auth> Update(string id, UpdateAuthDto updateDto, CancellationToken cancellationToken)
     {
         var updates = new List<UpdateDefinition<Auth>>();
+
+        if (updateDto.PasswordHash != null)
+            updates.Add(Builders<Auth>.Update.Set(a => a.PasswordHash, updateDto.PasswordHash));
 
         if (updateDto.Token != null)
             updates.Add(Builders<Auth>.Update.Set(a => a.Token, updateDto.Token));

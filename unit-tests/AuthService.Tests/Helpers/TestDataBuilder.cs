@@ -54,6 +54,7 @@ public static class TestDataBuilder
         return new CreateAuthDto
         {
             UserId = userId ?? "507f1f77bcf86cd799439011",
+            PasswordHash = "hashed-password-12345",
             Token = "test-token-12345"
         };
     }
@@ -62,6 +63,7 @@ public static class TestDataBuilder
     {
         return new UpdateAuthDto
         {
+            PasswordHash = "updated-hashed-password-67890",
             Token = "updated-token-67890"
         };
     }
@@ -72,6 +74,7 @@ public static class TestDataBuilder
         {
             Id = id ?? "507f1f77bcf86cd799439011",
             UserId = userId ?? "507f1f77bcf86cd799439011",
+            PasswordHash = "hashed-password-12345",
             Token = token,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = null

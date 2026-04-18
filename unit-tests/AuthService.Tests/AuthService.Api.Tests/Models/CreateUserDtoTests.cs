@@ -23,6 +23,7 @@ public class CreateUserDtoTests
     {
         var dto = new CreateUserDto
         {
+            Email = null!,
             Phone = "+1234567890"
         };
 
