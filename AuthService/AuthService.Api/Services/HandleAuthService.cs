@@ -5,12 +5,36 @@ using AuthService.Data.Models;
 using AuthService.Data.Repositories;
 using MongoDB.Driver;
 
-public class HandleAuthService(IAuthRepository authRepository)
+public class HandleAuthService(IAuthRepository authRepository, IUserRepository userRepository, IJwtTokenService jwtTokenService)
 {
-    public async Task<List<AuthDto>> Search(string? query, CancellationToken cancellationToken)
+    public async Task<RegisterResultDto> Register(RegisterDto registerDto, CancellationToken cancellationToken)
     {
-        var auths = await authRepository.GetAllAsync(cancellationToken);
-        return [.. auths.Select(a => new AuthDto(a))];
+        var newUser = new User
+        {
+            Email = registerDto.Email,
+            IsVerified = false,
+            CreatedAt = DateTime.UtcNow
+        };
+        var createdUser = await userRepository.CreateAsync(newUser, cancellationToken);
+        if (string.IsNullOrWhiteSpace(createdUser.Id))
+            throw new InvalidOperationException("User id was not generated.");
+
+        var token = jwtTokenService.GenerateToken(createdUser.Id!, createdUser.Email);
+
+        var newAuth = new Auth
+        {
+            UserId = createdUser.Id!,
+            PasswordHash = registerDto.PasswordHash,
+            Token = token,
+            CreatedAt = DateTime.UtcNow
+        };
+        await authRepository.CreateAsync(newAuth, cancellationToken);
+
+        return new RegisterResultDto
+        {
+            Message = "Register success.",
+            Token = token
+        };
     }
 
     public async Task<AuthDto> GetById(string id, CancellationToken cancellationToken)

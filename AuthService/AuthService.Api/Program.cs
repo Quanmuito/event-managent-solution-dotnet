@@ -1,4 +1,5 @@
 using AuthService.Api.Services;
+using AuthService.Api.Settings;
 using AuthService.Data.Repositories;
 using DatabaseService;
 using DatabaseService.Settings;
@@ -41,6 +42,7 @@ void ConfigureLogging(IHostBuilder builder)
 void ConfigureServices(IServiceCollection services, ConfigurationManager configuration)
 {
     services.Configure<MongoDbSettings>(configuration.GetSection("MongoDb"));
+    services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
     services.AddCommonApiServices(apiVersion);
     services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -48,6 +50,7 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
     services.AddSingleton<MongoDbContext>();
     services.AddScoped<IUserRepository, UserRepository>();
     services.AddScoped<IAuthRepository, AuthRepository>();
+    services.AddScoped<IJwtTokenService, JwtTokenService>();
     services.AddScoped<HandleUserService>();
     services.AddScoped<HandleAuthService>();
 }

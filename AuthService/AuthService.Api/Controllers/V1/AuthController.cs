@@ -11,11 +11,14 @@ using Microsoft.AspNetCore.Mvc;
 [Route("/v{version:apiVersion}/auths")]
 public class AuthController(HandleAuthService authService) : ControllerBase
 {
-    [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] string? query, CancellationToken cancellationToken)
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterDto registerDto, CancellationToken cancellationToken)
     {
-        var results = await authService.Search(query, cancellationToken);
-        return Ok(results);
+        if (!ModelState.IsValid)
+            return BadRequest(new ModelStateErrorResponse(ModelState));
+
+        var result = await authService.Register(registerDto, cancellationToken);
+        return Ok(result);
     }
 
     [HttpGet("{id}")]
