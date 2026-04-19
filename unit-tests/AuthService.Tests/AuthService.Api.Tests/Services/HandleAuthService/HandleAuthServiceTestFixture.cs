@@ -6,18 +6,24 @@ using Moq;
 
 public class HandleAuthServiceTestFixture : IDisposable
 {
-    public Mock<IAuthRepository> MockRepository { get; }
+    public Mock<IAuthRepository> MockAuthRepository { get; }
+    public Mock<IUserRepository> MockUserRepository { get; }
+    public Mock<IJwtTokenService> MockJwtTokenService { get; }
     public HandleAuthService Service { get; }
 
     public HandleAuthServiceTestFixture()
     {
-        MockRepository = new Mock<IAuthRepository>();
-        Service = new HandleAuthService(MockRepository.Object);
+        MockAuthRepository = new Mock<IAuthRepository>();
+        MockUserRepository = new Mock<IUserRepository>();
+        MockJwtTokenService = new Mock<IJwtTokenService>();
+        Service = new HandleAuthService(MockAuthRepository.Object, MockUserRepository.Object, MockJwtTokenService.Object);
     }
 
     public void ResetMocks()
     {
-        MockRepository.Reset();
+        MockAuthRepository.Reset();
+        MockUserRepository.Reset();
+        MockJwtTokenService.Reset();
     }
 
     public void Dispose()

@@ -23,7 +23,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
     public async Task GetById_WithValidId_ShouldReturnAuthDto()
     {
         var auth = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011");
-        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+        _fixture.MockAuthRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(auth);
 
         var result = await _fixture.Service.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
@@ -39,7 +39,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
         var dto = TestDataBuilder.CreateValidCreateAuthDto();
         var createdAuth = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011", dto.UserId, dto.Token);
 
-        _fixture.MockRepository.Setup(x => x.CreateAsync(It.IsAny<Auth>(), It.IsAny<CancellationToken>()))
+        _fixture.MockAuthRepository.Setup(x => x.CreateAsync(It.IsAny<Auth>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Auth a, CancellationToken ct) => a);
 
         var result = await _fixture.Service.Create(dto, CancellationToken.None);
@@ -49,7 +49,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
         result.PasswordHash.Should().Be(dto.PasswordHash);
         result.Token.Should().Be(dto.Token);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-        _fixture.MockRepository.Verify(x => x.CreateAsync(It.Is<Auth>(a =>
+        _fixture.MockAuthRepository.Verify(x => x.CreateAsync(It.Is<Auth>(a =>
             a.UserId == dto.UserId &&
             a.PasswordHash == dto.PasswordHash &&
             a.Token == dto.Token), It.IsAny<CancellationToken>()), Times.Once);
@@ -64,7 +64,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
         updatedAuth.Token = updateDto.Token!;
         updatedAuth.UpdatedAt = DateTime.UtcNow;
 
-        _fixture.MockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()))
+        _fixture.MockAuthRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedAuth);
 
         var result = await _fixture.Service.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
@@ -73,7 +73,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
         result.PasswordHash.Should().Be(updateDto.PasswordHash);
         result.Token.Should().Be(updateDto.Token);
         result.UpdatedAt.Should().NotBeNull();
-        _fixture.MockRepository.Verify(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockAuthRepository.Verify(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -90,12 +90,58 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
     [Fact]
     public async Task Delete_WithValidId_ShouldDeleteAndReturnTrue()
     {
-        _fixture.MockRepository.Setup(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+        _fixture.MockAuthRepository.Setup(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await _fixture.Service.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
         result.Should().BeTrue();
-        _fixture.MockRepository.Verify(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockAuthRepository.Verify(x => x.DeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Register_WithValidDto_ShouldCreateUserAndAuthAndReturnToken()
+    {
+        var registerDto = new RegisterDto
+        {
+            Email = "register@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        var createdUser = TestDataBuilder.CreateUser("507f1f77bcf86cd799439099", registerDto.Email, null);
+        _fixture.MockUserRepository.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(createdUser);
+        _fixture.MockJwtTokenService.Setup(x => x.GenerateToken(createdUser.Id!, createdUser.Email))
+            .Returns("jwt-token-123");
+        _fixture.MockAuthRepository.Setup(x => x.CreateAsync(It.IsAny<Auth>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Auth auth, CancellationToken _) => auth);
+
+        var result = await _fixture.Service.Register(registerDto, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Message.Should().Be("Register success.");
+        result.Token.Should().Be("jwt-token-123");
+        _fixture.MockUserRepository.Verify(x => x.CreateAsync(It.Is<User>(u => u.Email == registerDto.Email), It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockJwtTokenService.Verify(x => x.GenerateToken(createdUser.Id!, createdUser.Email), Times.Once);
+        _fixture.MockAuthRepository.Verify(x => x.CreateAsync(It.Is<Auth>(a =>
+            a.UserId == createdUser.Id &&
+            a.PasswordHash == registerDto.PasswordHash &&
+            a.Token == "jwt-token-123"), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Register_WhenUserCreateFails_ShouldThrowException()
+    {
+        var registerDto = new RegisterDto
+        {
+            Email = "register@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        _fixture.MockUserRepository.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Cannot create user."));
+
+        var act = async () => await _fixture.Service.Register(registerDto, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Cannot create user.");
     }
 }

@@ -7,6 +7,7 @@ using AuthService.Data.Repositories;
 using AuthService.Tests.Helpers;
 using TestUtilities.Helpers;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 public class AuthControllerCrudTests : IClassFixture<AuthControllerTestFixture>
@@ -24,7 +25,7 @@ public class AuthControllerCrudTests : IClassFixture<AuthControllerTestFixture>
     {
         var authEntity = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011");
         var authDto = new AuthDto(authEntity);
-        ControllerTestSetupHelper.SetupMockRepositoryForGetById(_fixture.MockRepository, authEntity, "507f1f77bcf86cd799439011");
+        ControllerTestSetupHelper.SetupMockRepositoryForGetById(_fixture.MockAuthRepository, authEntity, "507f1f77bcf86cd799439011");
 
         var result = await _fixture.Controller.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
 
@@ -45,7 +46,7 @@ public class AuthControllerCrudTests : IClassFixture<AuthControllerTestFixture>
     {
         var createDto = TestDataBuilder.CreateValidCreateAuthDto();
         var createdAuth = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011", createDto.UserId, createDto.Token);
-        ControllerTestSetupHelper.SetupMockRepositoryForCreate(_fixture.MockRepository, createdAuth);
+        ControllerTestSetupHelper.SetupMockRepositoryForCreate(_fixture.MockAuthRepository, createdAuth);
 
         var result = await _fixture.Controller.Create(createDto, CancellationToken.None);
 
@@ -69,7 +70,7 @@ public class AuthControllerCrudTests : IClassFixture<AuthControllerTestFixture>
         var updateDto = TestDataBuilder.CreateValidUpdateAuthDto();
         var updatedAuth = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011");
         updatedAuth.Token = updateDto.Token!;
-        ControllerTestSetupHelper.SetupMockRepositoryForUpdate(_fixture.MockRepository, updatedAuth, "507f1f77bcf86cd799439011");
+        ControllerTestSetupHelper.SetupMockRepositoryForUpdate(_fixture.MockAuthRepository, updatedAuth, "507f1f77bcf86cd799439011");
 
         var result = await _fixture.Controller.Update("507f1f77bcf86cd799439011", updateDto, CancellationToken.None);
 
@@ -79,10 +80,78 @@ public class AuthControllerCrudTests : IClassFixture<AuthControllerTestFixture>
     [Fact]
     public async Task Delete_WithValidId_ShouldReturnNoContent()
     {
-        ControllerTestSetupHelper.SetupMockRepositoryForDelete<IAuthRepository, Auth>(_fixture.MockRepository, true);
+        ControllerTestSetupHelper.SetupMockRepositoryForDelete<IAuthRepository, Auth>(_fixture.MockAuthRepository, true);
 
         var result = await _fixture.Controller.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
         ControllerTestHelper.AssertNoContent(result);
+    }
+
+    [Fact]
+    public async Task Register_WithValidDto_ShouldReturnOkWithToken()
+    {
+        var registerDto = new RegisterDto
+        {
+            Email = "register@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        var createdUser = TestDataBuilder.CreateUser("507f1f77bcf86cd799439099", registerDto.Email, null);
+        _fixture.MockUserRepository.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(createdUser);
+        _fixture.MockJwtTokenService.Setup(x => x.GenerateToken(createdUser.Id!, createdUser.Email))
+            .Returns("jwt-token-123");
+        _fixture.MockAuthRepository.Setup(x => x.CreateAsync(It.IsAny<Auth>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Auth auth, CancellationToken _) => auth);
+
+        var result = await _fixture.Controller.Register(registerDto, CancellationToken.None);
+
+        var okResult = ControllerTestHelper.AssertOkResult<RegisterResultDto>(result);
+        okResult.Message.Should().Be("Register success.");
+        okResult.Token.Should().Be("jwt-token-123");
+    }
+
+    [Fact]
+    public async Task Register_WithInvalidModelState_ShouldReturnBadRequest()
+    {
+        var registerDto = new RegisterDto
+        {
+            Email = "register@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        _fixture.Controller.ModelState.AddModelError("Email", "Email is required");
+
+        var result = await _fixture.Controller.Register(registerDto, CancellationToken.None);
+
+        ControllerTestHelper.AssertBadRequest(result);
+    }
+
+    [Fact]
+    public async Task Register_WhenServiceThrowsInvalidOperation_ShouldThrow()
+    {
+        var registerDto = new RegisterDto
+        {
+            Email = "register@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        _fixture.MockUserRepository.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Registration failed."));
+
+        var act = async () => await _fixture.Controller.Register(registerDto, CancellationToken.None);
+        await ControllerTestHelper.AssertExceptionThrown<InvalidOperationException>(act, "Registration failed.");
+    }
+
+    [Fact]
+    public async Task Register_WhenServiceThrowsUnexpectedException_ShouldThrow()
+    {
+        var registerDto = new RegisterDto
+        {
+            Email = "register@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        _fixture.MockUserRepository.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Unexpected"));
+
+        var act = async () => await _fixture.Controller.Register(registerDto, CancellationToken.None);
+        await ControllerTestHelper.AssertExceptionThrown<Exception>(act, "Unexpected");
     }
 }
