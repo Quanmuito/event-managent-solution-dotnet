@@ -8,6 +8,7 @@ using FluentAssertions;
 using MongoDB.Driver;
 using Moq;
 using Xunit;
+using UserService.Data.Models;
 
 public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFixture>
 {

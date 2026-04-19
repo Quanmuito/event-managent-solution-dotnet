@@ -1,10 +1,10 @@
-namespace AuthService.Api.Tests.Controllers.V1;
+namespace UserService.Api.Tests.Controllers.V1;
 
-using AuthService.Api.Models;
-using AuthService.Tests.Helpers;
-using TestUtilities.Helpers;
 using FluentAssertions;
 using Moq;
+using TestUtilities.Helpers;
+using UserService.Api.Models;
+using UserService.Tests.Helpers;
 using Xunit;
 
 public class UserControllerSearchTests : IClassFixture<UserControllerTestFixture>

@@ -1,9 +1,9 @@
-namespace AuthService.Api.Tests.Controllers.V1;
+namespace UserService.Api.Tests.Controllers.V1;
 
-using AuthService.Api.Controllers.V1;
-using AuthService.Api.Services;
-using AuthService.Data.Repositories;
 using Moq;
+using UserService.Api.Controllers.V1;
+using UserService.Api.Services;
+using UserService.Data.Repositories;
 
 public class UserControllerTestFixture : IDisposable
 {

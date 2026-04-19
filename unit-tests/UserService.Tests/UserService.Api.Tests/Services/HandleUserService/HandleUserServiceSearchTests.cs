@@ -1,9 +1,9 @@
-namespace AuthService.Api.Tests.Services.HandleUserService;
+namespace UserService.Api.Tests.Services.HandleUserService;
 
-using AuthService.Api.Models;
-using AuthService.Tests.Helpers;
 using FluentAssertions;
 using Moq;
+using UserService.Api.Models;
+using UserService.Tests.Helpers;
 using Xunit;
 
 public class HandleUserServiceSearchTests : IClassFixture<HandleUserServiceTestFixture>

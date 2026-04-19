@@ -1,12 +1,12 @@
-namespace AuthService.Api.Tests.Services.HandleUserService;
+namespace UserService.Api.Tests.Services.HandleUserService;
 
-using AuthService.Api.Models;
-using AuthService.Data.Models;
-using AuthService.Tests.Helpers;
-using TestUtilities.Helpers;
 using FluentAssertions;
 using MongoDB.Driver;
 using Moq;
+using TestUtilities.Helpers;
+using UserService.Api.Models;
+using UserService.Data.Models;
+using UserService.Tests.Helpers;
 using Xunit;
 
 public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFixture>
@@ -22,7 +22,7 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
     [Fact]
     public async Task GetById_WithValidId_ShouldReturnUserDto()
     {
-        var user = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var user = TestDataBuilder.CreateDefaultUser();
         _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
@@ -49,10 +49,6 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
     public async Task Create_WithValidDto_ShouldCreateAndReturnUser()
     {
         var dto = TestDataBuilder.CreateValidCreateUserDto();
-        var createdUser = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
-        createdUser.Email = dto.Email;
-        createdUser.Phone = dto.Phone;
-        createdUser.IsVerified = dto.IsVerified;
 
         _fixture.MockRepository.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User u, CancellationToken ct) => u);
@@ -74,7 +70,7 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
     public async Task Update_WithValidDto_ShouldUpdateAndReturnUser()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateUserDto();
-        var updatedUser = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var updatedUser = TestDataBuilder.CreateDefaultUser();
         updatedUser.Email = updateDto.Email!;
         updatedUser.Phone = updateDto.Phone!;
         updatedUser.IsVerified = updateDto.IsVerified!.Value;
@@ -107,7 +103,7 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
     [Fact]
     public async Task Delete_WithValidId_ShouldSoftDeleteAndReturnTrue()
     {
-        var user = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var user = TestDataBuilder.CreateDefaultUser();
         user.IsDeleted = true;
         user.DeletedAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;

@@ -1,9 +1,9 @@
-namespace AuthService.Data.Tests.Models;
+namespace UserService.Data.Tests.Models;
 
-using AuthService.Api.Models;
-using AuthService.Data.Models;
-using AuthService.Tests.Helpers;
 using FluentAssertions;
+using UserService.Api.Models;
+using UserService.Data.Models;
+using UserService.Tests.Helpers;
 using Xunit;
 
 public class UserTests

@@ -1,9 +1,9 @@
-namespace AuthService.Api.Tests.Models;
+namespace UserService.Api.Tests.Models;
 
-using AuthService.Api.Models;
-using AuthService.Tests.Helpers;
 using FluentAssertions;
 using System.ComponentModel.DataAnnotations;
+using UserService.Api.Models;
+using UserService.Tests.Helpers;
 using Xunit;
 
 public class CreateUserDtoTests

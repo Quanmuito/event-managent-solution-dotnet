@@ -1,8 +1,8 @@
-namespace AuthService.Api.Tests.Services.HandleUserService;
+namespace UserService.Api.Tests.Services.HandleUserService;
 
-using AuthService.Api.Services;
-using AuthService.Data.Repositories;
 using Moq;
+using UserService.Api.Services;
+using UserService.Data.Repositories;
 
 public class HandleUserServiceTestFixture : IDisposable
 {

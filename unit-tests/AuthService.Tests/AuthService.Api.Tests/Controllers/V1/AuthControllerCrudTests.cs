@@ -8,6 +8,7 @@ using AuthService.Tests.Helpers;
 using TestUtilities.Helpers;
 using FluentAssertions;
 using Moq;
+using UserService.Data.Models;
 using Xunit;
 
 public class AuthControllerCrudTests : IClassFixture<AuthControllerTestFixture>

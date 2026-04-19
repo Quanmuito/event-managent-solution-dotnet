@@ -4,6 +4,7 @@ using AuthService.Api.Controllers.V1;
 using AuthService.Api.Services;
 using AuthService.Data.Repositories;
 using Moq;
+using UserService.Data.Repositories;
 
 public class AuthControllerTestFixture : IDisposable
 {

@@ -1,8 +1,7 @@
-namespace AuthService.Api.Tests.Models;
+namespace UserService.Api.Tests.Models;
 
-using AuthService.Api.Models;
-using AuthService.Tests.Helpers;
 using FluentAssertions;
+using UserService.Api.Models;
 using Xunit;
 
 public class UpdateUserDtoTests

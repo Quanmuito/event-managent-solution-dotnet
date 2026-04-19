@@ -1,13 +1,13 @@
-namespace AuthService.Data.Tests.Repositories;
+namespace UserService.Data.Tests.Repositories;
 
 using DatabaseService;
-using AuthService.Data.Models;
-using AuthService.Data.Repositories;
-using AuthService.Tests.Helpers;
-using TestUtilities.Helpers;
 using FluentAssertions;
 using MongoDB.Driver;
 using Moq;
+using TestUtilities.Helpers;
+using UserService.Data.Models;
+using UserService.Data.Repositories;
+using UserService.Tests.Helpers;
 using Xunit;
 
 public class UserRepositoryTests : RepositoryTestBase<User, UserRepository>
@@ -24,7 +24,9 @@ public class UserRepositoryTests : RepositoryTestBase<User, UserRepository>
 
     protected override User CreateEntity(string? id = null)
     {
-        return TestDataBuilder.CreateUser(id);
+        return id == null
+            ? TestDataBuilder.CreateDefaultUser()
+            : TestDataBuilder.CreateUser(id, "test@example.com", "+1234567890");
     }
 
     protected override string GetValidEntityId()
@@ -59,8 +61,8 @@ public class UserRepositoryTests : RepositoryTestBase<User, UserRepository>
     {
         var users = new List<User>
         {
-            TestDataBuilder.CreateUser("507f1f77bcf86cd799439011"),
-            TestDataBuilder.CreateUser("507f1f77bcf86cd799439012")
+            TestDataBuilder.CreateUser("507f1f77bcf86cd799439011", "test@example.com", "+1234567890"),
+            TestDataBuilder.CreateUser("507f1f77bcf86cd799439012", "test@example.com", "+1234567890")
         };
         MongoDbMockHelper.SetupFindToListAsync(MockCollection, users);
 
@@ -75,7 +77,7 @@ public class UserRepositoryTests : RepositoryTestBase<User, UserRepository>
     {
         var users = new List<User>
         {
-            TestDataBuilder.CreateUser("507f1f77bcf86cd799439011")
+            TestDataBuilder.CreateDefaultUser()
         };
         MongoDbMockHelper.SetupFindToListAsync(MockCollection, users);
 
@@ -89,7 +91,7 @@ public class UserRepositoryTests : RepositoryTestBase<User, UserRepository>
     {
         var users = new List<User>
         {
-            TestDataBuilder.CreateUser("507f1f77bcf86cd799439011", "test@example.com")
+            TestDataBuilder.CreateUser("507f1f77bcf86cd799439011", "test@example.com", "+1234567890")
         };
         MongoDbMockHelper.SetupFindToListAsync(MockCollection, users);
 
@@ -121,7 +123,7 @@ public class UserRepositoryTests : RepositoryTestBase<User, UserRepository>
     {
         var users = new List<User>
         {
-            TestDataBuilder.CreateUser("507f1f77bcf86cd799439011", "Test@Example.com")
+            TestDataBuilder.CreateUser("507f1f77bcf86cd799439011", "Test@Example.com", "+1234567890")
         };
         MongoDbMockHelper.SetupFindToListAsync(MockCollection, users);
 

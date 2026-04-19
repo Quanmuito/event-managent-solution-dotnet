@@ -1,12 +1,12 @@
-namespace AuthService.Api.Tests.Controllers.V1;
+namespace UserService.Api.Tests.Controllers.V1;
 
-using AuthService.Api.Controllers.V1;
-using AuthService.Api.Models;
-using AuthService.Data.Models;
-using AuthService.Data.Repositories;
-using AuthService.Tests.Helpers;
-using TestUtilities.Helpers;
 using FluentAssertions;
+using TestUtilities.Helpers;
+using UserService.Api.Controllers.V1;
+using UserService.Api.Models;
+using UserService.Data.Models;
+using UserService.Data.Repositories;
+using UserService.Tests.Helpers;
 using Xunit;
 
 public class UserControllerCrudTests : IClassFixture<UserControllerTestFixture>
@@ -22,7 +22,7 @@ public class UserControllerCrudTests : IClassFixture<UserControllerTestFixture>
     [Fact]
     public async Task GetById_WithValidId_ShouldReturnOk()
     {
-        var userEntity = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var userEntity = TestDataBuilder.CreateDefaultUser();
         var userDto = new UserDto(userEntity);
         ControllerTestSetupHelper.SetupMockRepositoryForGetById(_fixture.MockRepository, userEntity, "507f1f77bcf86cd799439011");
 
@@ -44,7 +44,7 @@ public class UserControllerCrudTests : IClassFixture<UserControllerTestFixture>
     public async Task Create_WithValidDto_ShouldReturnCreatedAtAction()
     {
         var createDto = TestDataBuilder.CreateValidCreateUserDto();
-        var createdUser = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var createdUser = TestDataBuilder.CreateDefaultUser();
         ControllerTestSetupHelper.SetupMockRepositoryForCreate(_fixture.MockRepository, createdUser);
 
         var result = await _fixture.Controller.Create(createDto, CancellationToken.None);
@@ -67,7 +67,7 @@ public class UserControllerCrudTests : IClassFixture<UserControllerTestFixture>
     public async Task Update_WithValidDto_ShouldReturnOk()
     {
         var updateDto = TestDataBuilder.CreateValidUpdateUserDto();
-        var updatedUser = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var updatedUser = TestDataBuilder.CreateDefaultUser();
         updatedUser.Email = updateDto.Email!;
         ControllerTestSetupHelper.SetupMockRepositoryForUpdate(_fixture.MockRepository, updatedUser, "507f1f77bcf86cd799439011");
 
@@ -89,7 +89,7 @@ public class UserControllerCrudTests : IClassFixture<UserControllerTestFixture>
     [Fact]
     public async Task Delete_WithValidId_ShouldReturnNoContent()
     {
-        var user = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var user = TestDataBuilder.CreateDefaultUser();
         user.IsDeleted = true;
         ControllerTestSetupHelper.SetupMockRepositoryForUpdate(_fixture.MockRepository, user, "507f1f77bcf86cd799439011");
 

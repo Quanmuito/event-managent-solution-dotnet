@@ -1,8 +1,8 @@
-namespace AuthService.Api.Tests.Models;
+namespace UserService.Api.Tests.Models;
 
-using AuthService.Api.Models;
-using AuthService.Tests.Helpers;
 using FluentAssertions;
+using UserService.Api.Models;
+using UserService.Tests.Helpers;
 using Xunit;
 
 public class UserDtoTests
@@ -10,7 +10,7 @@ public class UserDtoTests
     [Fact]
     public void Constructor_WithValidUser_ShouldMapAllProperties()
     {
-        var userEntity = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var userEntity = TestDataBuilder.CreateDefaultUser();
 
         var result = new UserDto(userEntity);
 
@@ -30,7 +30,7 @@ public class UserDtoTests
     [Fact]
     public void Constructor_WithNullUpdatedAt_ShouldSetUpdatedAtToNull()
     {
-        var userEntity = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var userEntity = TestDataBuilder.CreateDefaultUser();
         userEntity.UpdatedAt = null;
 
         var result = new UserDto(userEntity);
@@ -41,7 +41,7 @@ public class UserDtoTests
     [Fact]
     public void Constructor_WithNullPhone_ShouldSetPhoneToNull()
     {
-        var userEntity = TestDataBuilder.CreateUser("507f1f77bcf86cd799439011");
+        var userEntity = TestDataBuilder.CreateDefaultUser();
         userEntity.Phone = null;
 
         var result = new UserDto(userEntity);
