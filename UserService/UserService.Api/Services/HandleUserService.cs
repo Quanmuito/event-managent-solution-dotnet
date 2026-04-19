@@ -15,7 +15,7 @@ public class HandleUserService(IUserRepository userRepository)
 
     public async Task<UserDto> GetById(string id, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByIdAsync(id, cancellationToken);
+        var user = await userRepository.GetActiveByIdAsync(id, cancellationToken);
         return new UserDto(user);
     }
 
@@ -56,15 +56,6 @@ public class HandleUserService(IUserRepository userRepository)
 
     public async Task<bool> Delete(string id, CancellationToken cancellationToken)
     {
-        var updates = new List<UpdateDefinition<User>>
-        {
-            Builders<User>.Update.Set(u => u.IsDeleted, true),
-            Builders<User>.Update.Set(u => u.DeletedAt, DateTime.UtcNow),
-            Builders<User>.Update.Set(u => u.UpdatedAt, DateTime.UtcNow)
-        };
-
-        var updateDef = Builders<User>.Update.Combine(updates);
-        var result = await userRepository.UpdateAsync(id, updateDef, cancellationToken);
-        return result != null;
+        return await userRepository.SoftDeleteAsync(id, cancellationToken);
     }
 }

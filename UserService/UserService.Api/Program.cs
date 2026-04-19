@@ -1,11 +1,11 @@
-using Asp.Versioning;
-using AspNet.Common.Extensions;
 using DatabaseService;
 using DatabaseService.Settings;
-using Ems.Common.Extensions.Startup;
-using Ems.Common.Http.ExceptionHandler;
 using UserService.Api.Services;
 using UserService.Data.Repositories;
+using Asp.Versioning;
+using AspNet.Common.Extensions;
+using Ems.Common.Extensions.Startup;
+using Ems.Common.Http.ExceptionHandler;
 
 const string environmentVariablesPrefix = "UserService_";
 ApiVersion apiVersion = new(1, 0);
@@ -26,7 +26,7 @@ try
 }
 catch (Exception ex)
 {
-    logger?.LogError(ex, "An error occured during initialization");
+    logger?.LogError(ex, "An error occurred during initialization");
 }
 finally
 {

@@ -23,7 +23,7 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
     public async Task GetById_WithValidId_ShouldReturnUserDto()
     {
         var user = TestDataBuilder.CreateDefaultUser();
-        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+        _fixture.MockRepository.Setup(x => x.GetActiveByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var result = await _fixture.Service.GetById("507f1f77bcf86cd799439011", CancellationToken.None);
@@ -36,13 +36,25 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
     [Fact]
     public async Task GetById_WithNonExistentId_ShouldThrowKeyNotFoundException()
     {
-        _fixture.MockRepository.Setup(x => x.GetByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
+        _fixture.MockRepository.Setup(x => x.GetActiveByIdAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new KeyNotFoundException("Users with ID '507f1f77bcf86cd799439999' was not found."));
 
         var act = async () => await _fixture.Service.GetById("507f1f77bcf86cd799439999", CancellationToken.None);
 
         await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Users with ID '507f1f77bcf86cd799439999' was not found.");
+    }
+
+    [Fact]
+    public async Task GetById_WithInvalidFormatId_ShouldThrowFormatException()
+    {
+        _fixture.MockRepository.Setup(x => x.GetActiveByIdAsync("invalid-id", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
+
+        var act = async () => await _fixture.Service.GetById("invalid-id", CancellationToken.None);
+
+        await act.Should().ThrowAsync<FormatException>()
+            .WithMessage("Invalid ObjectId format: invalid-id");
     }
 
     [Fact]
@@ -101,19 +113,63 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
     }
 
     [Fact]
+    public async Task Update_WithNonExistentId_ShouldThrowKeyNotFoundException()
+    {
+        var updateDto = TestDataBuilder.CreateValidUpdateUserDto();
+        _fixture.MockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439999", It.IsAny<UpdateDefinition<User>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new KeyNotFoundException("Users with ID '507f1f77bcf86cd799439999' was not found."));
+
+        var act = async () => await _fixture.Service.Update("507f1f77bcf86cd799439999", updateDto, CancellationToken.None);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage("Users with ID '507f1f77bcf86cd799439999' was not found.");
+    }
+
+    [Fact]
+    public async Task Update_WithInvalidFormatId_ShouldThrowFormatException()
+    {
+        var updateDto = TestDataBuilder.CreateValidUpdateUserDto();
+        _fixture.MockRepository.Setup(x => x.UpdateAsync("invalid-id", It.IsAny<UpdateDefinition<User>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
+
+        var act = async () => await _fixture.Service.Update("invalid-id", updateDto, CancellationToken.None);
+
+        await act.Should().ThrowAsync<FormatException>()
+            .WithMessage("Invalid ObjectId format: invalid-id");
+    }
+
+    [Fact]
     public async Task Delete_WithValidId_ShouldSoftDeleteAndReturnTrue()
     {
-        var user = TestDataBuilder.CreateDefaultUser();
-        user.IsDeleted = true;
-        user.DeletedAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
-
-        _fixture.MockRepository.Setup(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<User>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
+        _fixture.MockRepository.Setup(x => x.SoftDeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         var result = await _fixture.Service.Delete("507f1f77bcf86cd799439011", CancellationToken.None);
 
         result.Should().BeTrue();
-        _fixture.MockRepository.Verify(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<User>>(), It.IsAny<CancellationToken>()), Times.Once);
+        _fixture.MockRepository.Verify(x => x.SoftDeleteAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Delete_WithNonExistentId_ShouldReturnFalse()
+    {
+        _fixture.MockRepository.Setup(x => x.SoftDeleteAsync("507f1f77bcf86cd799439999", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await _fixture.Service.Delete("507f1f77bcf86cd799439999", CancellationToken.None);
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Delete_WithInvalidFormatId_ShouldThrowFormatException()
+    {
+        _fixture.MockRepository.Setup(x => x.SoftDeleteAsync("invalid-id", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new FormatException("Invalid ObjectId format: invalid-id"));
+
+        var act = async () => await _fixture.Service.Delete("invalid-id", CancellationToken.None);
+
+        await act.Should().ThrowAsync<FormatException>()
+            .WithMessage("Invalid ObjectId format: invalid-id");
     }
 }

@@ -7,11 +7,11 @@ using DatabaseService.Settings;
 using EventService.Data.Repositories;
 using NotificationService.Common.Messages;
 using NotificationService.Common.Services;
+using Asp.Versioning;
 using AspNet.Common.Extensions;
 using AWSService.Extensions;
 using Ems.Common.Extensions.Startup;
 using Ems.Common.Http.ExceptionHandler;
-using Asp.Versioning;
 
 const string environmentVariablesPrefix = "BookingService_";
 ApiVersion apiVersion = new(1, 0);
@@ -32,7 +32,7 @@ try
 }
 catch (Exception ex)
 {
-    logger?.LogError(ex, "An error occured during initialization");
+    logger?.LogError(ex, "An error occurred during initialization");
 }
 finally
 {
