@@ -4,6 +4,8 @@ using AuthService.Api.Models;
 using AuthService.Data.Models;
 using AuthService.Data.Repositories;
 using MongoDB.Driver;
+using UserService.Data.Models;
+using UserService.Data.Repositories;
 
 public class HandleAuthService(IAuthRepository authRepository, IUserRepository userRepository, IJwtTokenService jwtTokenService)
 {

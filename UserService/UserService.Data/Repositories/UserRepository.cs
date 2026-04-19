@@ -1,11 +1,11 @@
-namespace AuthService.Data.Repositories;
+namespace UserService.Data.Repositories;
 
 using System.Text.RegularExpressions;
-using AuthService.Data.Models;
 using DatabaseService;
 using DatabaseService.Repositories;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using UserService.Data.Models;
 
 public class UserRepository(MongoDbContext mongoDbContext) : Repository<User>(mongoDbContext, "Users"), IUserRepository
 {

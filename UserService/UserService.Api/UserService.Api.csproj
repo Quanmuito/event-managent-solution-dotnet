@@ -9,7 +9,6 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,8 +21,7 @@
       <ProjectReference Include="..\..\AspNet.Common\AspNet.Common.csproj" />
       <ProjectReference Include="..\..\Ems.Common\Ems.Common.csproj" />
       <ProjectReference Include="..\..\DatabaseService\DatabaseService.csproj" />
-      <ProjectReference Include="..\..\UserService\UserService.Data\UserService.Data.csproj" />
-      <ProjectReference Include="..\AuthService.Data\AuthService.Data.csproj" />
+      <ProjectReference Include="..\UserService.Data\UserService.Data.csproj" />
     </ItemGroup>
 
 </Project>

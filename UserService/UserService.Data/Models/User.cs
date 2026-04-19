@@ -1,4 +1,4 @@
-namespace AuthService.Data.Models;
+namespace UserService.Data.Models;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -17,10 +17,10 @@ public class User
     public string? Phone { get; set; }
 
     [BsonElement("isVerified")]
-    public bool IsVerified { get; set; } = false;
+    public bool IsVerified { get; set; }
 
     [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
+    public bool IsDeleted { get; set; }
 
     [BsonElement("deletedAt")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]

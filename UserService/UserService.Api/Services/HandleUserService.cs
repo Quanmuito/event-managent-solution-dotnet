@@ -1,9 +1,9 @@
-namespace AuthService.Api.Services;
+namespace UserService.Api.Services;
 
-using AuthService.Api.Models;
-using AuthService.Data.Models;
-using AuthService.Data.Repositories;
 using MongoDB.Driver;
+using UserService.Api.Models;
+using UserService.Data.Models;
+using UserService.Data.Repositories;
 
 public class HandleUserService(IUserRepository userRepository)
 {
@@ -51,8 +51,7 @@ public class HandleUserService(IUserRepository userRepository)
 
         var updateDef = Builders<User>.Update.Combine(updates);
 
-        var result = await userRepository.UpdateAsync(id, updateDef, cancellationToken);
-        return result;
+        return await userRepository.UpdateAsync(id, updateDef, cancellationToken);
     }
 
     public async Task<bool> Delete(string id, CancellationToken cancellationToken)

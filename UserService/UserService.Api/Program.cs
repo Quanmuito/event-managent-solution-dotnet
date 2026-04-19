@@ -1,14 +1,13 @@
-using AuthService.Api.Services;
-using AuthService.Api.Settings;
-using AuthService.Data.Repositories;
+using Asp.Versioning;
+using AspNet.Common.Extensions;
 using DatabaseService;
 using DatabaseService.Settings;
-using AspNet.Common.Extensions;
 using Ems.Common.Extensions.Startup;
 using Ems.Common.Http.ExceptionHandler;
-using Asp.Versioning;
+using UserService.Api.Services;
+using UserService.Data.Repositories;
 
-const string environmentVariablesPrefix = "AuthService_";
+const string environmentVariablesPrefix = "UserService_";
 ApiVersion apiVersion = new(1, 0);
 ILogger<Program>? logger = null;
 try
@@ -42,13 +41,11 @@ void ConfigureLogging(IHostBuilder builder)
 void ConfigureServices(IServiceCollection services, ConfigurationManager configuration)
 {
     services.Configure<MongoDbSettings>(configuration.GetSection("MongoDb"));
-    services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
     services.AddCommonApiServices(apiVersion);
     services.AddExceptionHandler<GlobalExceptionHandler>();
 
     services.AddSingleton<MongoDbContext>();
-    services.AddScoped<IAuthRepository, AuthRepository>();
-    services.AddScoped<IJwtTokenService, JwtTokenService>();
-    services.AddScoped<HandleAuthService>();
+    services.AddScoped<IUserRepository, UserRepository>();
+    services.AddScoped<HandleUserService>();
 }

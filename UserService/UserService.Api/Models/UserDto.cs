@@ -1,6 +1,6 @@
-namespace AuthService.Api.Models;
+namespace UserService.Api.Models;
 
-using AuthService.Data.Models;
+using UserService.Data.Models;
 
 public class UserDto(User user)
 {

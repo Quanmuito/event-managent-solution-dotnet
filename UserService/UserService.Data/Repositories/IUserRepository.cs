@@ -1,7 +1,7 @@
-namespace AuthService.Data.Repositories;
+namespace UserService.Data.Repositories;
 
-using AuthService.Data.Models;
 using DatabaseService.Repositories;
+using UserService.Data.Models;
 
 public interface IUserRepository : IRepository<User>
 {

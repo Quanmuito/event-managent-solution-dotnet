@@ -1,10 +1,10 @@
-namespace AuthService.Api.Controllers.V1;
+namespace UserService.Api.Controllers.V1;
 
-using AuthService.Api.Models;
-using AuthService.Api.Services;
-using Ems.Common.Http.Responses.Errors;
 using Asp.Versioning;
+using Ems.Common.Http.Responses.Errors;
 using Microsoft.AspNetCore.Mvc;
+using UserService.Api.Models;
+using UserService.Api.Services;
 
 [ApiController]
 [ApiVersion("1.0")]
