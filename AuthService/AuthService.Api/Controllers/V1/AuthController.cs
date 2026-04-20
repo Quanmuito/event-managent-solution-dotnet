@@ -21,6 +21,16 @@ public class AuthController(HandleAuthService authService) : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginDto loginDto, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new ModelStateErrorResponse(ModelState));
+
+        var token = await authService.Login(loginDto, cancellationToken);
+        return Ok(token);
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {

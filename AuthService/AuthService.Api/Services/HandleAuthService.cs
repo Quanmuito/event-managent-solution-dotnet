@@ -39,6 +39,29 @@ public class HandleAuthService(IAuthRepository authRepository, IUserRepository u
         };
     }
 
+    public async Task<string> Login(LoginDto loginDto, CancellationToken cancellationToken)
+    {
+        var user = await userRepository.GetByEmailAsync(loginDto.Email, cancellationToken);
+        if (user == null || string.IsNullOrWhiteSpace(user.Id))
+            throw new UnauthorizedAccessException("Invalid email or password.");
+
+        var auth = await authRepository.GetByUserIdOrThrowAsync(user.Id, cancellationToken);
+        if (string.IsNullOrWhiteSpace(auth.Id))
+            throw new InvalidOperationException("Auth id was not found.");
+
+        if (auth.PasswordHash != loginDto.PasswordHash)
+            throw new UnauthorizedAccessException("Invalid email or password.");
+
+        var token = jwtTokenService.GenerateToken(user.Id, user.Email);
+        var updates = Builders<Auth>.Update.Combine(
+            Builders<Auth>.Update.Set(a => a.Token, token),
+            Builders<Auth>.Update.Set(a => a.UpdatedAt, DateTime.UtcNow)
+        );
+        await authRepository.UpdateAsync(auth.Id, updates, cancellationToken);
+
+        return token;
+    }
+
     public async Task<AuthDto> GetById(string id, CancellationToken cancellationToken)
     {
         var auth = await authRepository.GetByIdAsync(id, cancellationToken);

@@ -145,4 +145,51 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("Cannot create user.");
     }
+
+    [Fact]
+    public async Task Login_WithValidDto_ShouldReturnTokenAndPersistToken()
+    {
+        var loginDto = new LoginDto
+        {
+            Email = "login@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        var user = TestDataBuilder.CreateUser("507f1f77bcf86cd799439099", loginDto.Email, null);
+        var auth = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011", user.Id, "old-token");
+        var refreshedToken = "jwt-token-456";
+        _fixture.MockUserRepository.Setup(x => x.GetByEmailAsync(loginDto.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _fixture.MockAuthRepository.Setup(x => x.GetByUserIdOrThrowAsync(user.Id!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(auth);
+        _fixture.MockJwtTokenService.Setup(x => x.GenerateToken(user.Id!, user.Email))
+            .Returns(refreshedToken);
+        _fixture.MockAuthRepository.Setup(x => x.UpdateAsync(auth.Id!, It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(auth);
+
+        var result = await _fixture.Service.Login(loginDto, CancellationToken.None);
+
+        result.Should().Be(refreshedToken);
+        _fixture.MockAuthRepository.Verify(x => x.UpdateAsync(auth.Id!, It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Login_WithInvalidPassword_ShouldThrowUnauthorizedAccessException()
+    {
+        var loginDto = new LoginDto
+        {
+            Email = "login@example.com",
+            PasswordHash = "wrong-password"
+        };
+        var user = TestDataBuilder.CreateUser("507f1f77bcf86cd799439099", loginDto.Email, null);
+        var auth = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011", user.Id, "old-token");
+        _fixture.MockUserRepository.Setup(x => x.GetByEmailAsync(loginDto.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _fixture.MockAuthRepository.Setup(x => x.GetByUserIdOrThrowAsync(user.Id!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(auth);
+
+        var act = async () => await _fixture.Service.Login(loginDto, CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("Invalid email or password.");
+    }
 }

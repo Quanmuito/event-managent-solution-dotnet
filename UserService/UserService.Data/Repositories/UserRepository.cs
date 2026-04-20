@@ -22,6 +22,15 @@ public class UserRepository(MongoDbContext mongoDbContext) : Repository<User>(mo
         return result ?? throw new KeyNotFoundException($"Users with ID '{id}' was not found.");
     }
 
+    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken)
+    {
+        var filter = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq(u => u.Email, email),
+            Builders<User>.Filter.Eq(u => u.IsDeleted, false)
+        );
+        return await Collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<List<User>> SearchAsync(string? query, CancellationToken cancellationToken)
     {
         var activeFilter = Builders<User>.Filter.Eq(u => u.IsDeleted, false);

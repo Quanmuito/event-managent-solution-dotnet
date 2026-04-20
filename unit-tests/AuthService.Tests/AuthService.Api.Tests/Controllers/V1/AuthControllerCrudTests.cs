@@ -7,6 +7,7 @@ using AuthService.Data.Repositories;
 using AuthService.Tests.Helpers;
 using TestUtilities.Helpers;
 using FluentAssertions;
+using MongoDB.Driver;
 using Moq;
 using UserService.Data.Models;
 using Xunit;
@@ -122,6 +123,46 @@ public class AuthControllerCrudTests : IClassFixture<AuthControllerTestFixture>
         _fixture.Controller.ModelState.AddModelError("Email", "Email is required");
 
         var result = await _fixture.Controller.Register(registerDto, CancellationToken.None);
+
+        ControllerTestHelper.AssertBadRequest(result);
+    }
+
+    [Fact]
+    public async Task Login_WithValidDto_ShouldReturnOkWithToken()
+    {
+        var loginDto = new LoginDto
+        {
+            Email = "login@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        var user = TestDataBuilder.CreateUser("507f1f77bcf86cd799439099", loginDto.Email, null);
+        var auth = TestDataBuilder.CreateAuth("507f1f77bcf86cd799439011", user.Id, "old-token");
+        _fixture.MockUserRepository.Setup(x => x.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _fixture.MockAuthRepository.Setup(x => x.GetByUserIdOrThrowAsync(user.Id!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(auth);
+        _fixture.MockJwtTokenService.Setup(x => x.GenerateToken(user.Id!, user.Email))
+            .Returns("jwt-token-123");
+        _fixture.MockAuthRepository.Setup(x => x.UpdateAsync(auth.Id!, It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(auth);
+
+        var result = await _fixture.Controller.Login(loginDto, CancellationToken.None);
+
+        var okResult = ControllerTestHelper.AssertOkResult<string>(result);
+        okResult.Should().Be("jwt-token-123");
+    }
+
+    [Fact]
+    public async Task Login_WithInvalidModelState_ShouldReturnBadRequest()
+    {
+        var loginDto = new LoginDto
+        {
+            Email = "login@example.com",
+            PasswordHash = "hashed-password-12345"
+        };
+        _fixture.Controller.ModelState.AddModelError("Email", "Email is required");
+
+        var result = await _fixture.Controller.Login(loginDto, CancellationToken.None);
 
         ControllerTestHelper.AssertBadRequest(result);
     }
