@@ -19,4 +19,14 @@ public class AuthRepository(MongoDbContext mongoDbContext) : Repository<Auth>(mo
         var auth = await Collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
         return auth ?? throw new KeyNotFoundException($"Auth not found for user id '{userId}'.");
     }
+
+    public async Task<bool> HasMatchingTokenAsync(string userId, string token, CancellationToken cancellationToken)
+    {
+        var filter = Builders<Auth>.Filter.And(
+            Builders<Auth>.Filter.Eq(a => a.UserId, userId),
+            Builders<Auth>.Filter.Eq(a => a.Token, token)
+        );
+        var count = await Collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+        return count > 0;
+    }
 }

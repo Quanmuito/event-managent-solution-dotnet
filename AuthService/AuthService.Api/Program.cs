@@ -1,3 +1,5 @@
+using AuthService.Common.Security;
+using AuthService.Data.Security;
 using AuthService.Api.Services;
 using AuthService.Api.Settings;
 using AuthService.Data.Repositories;
@@ -21,6 +23,7 @@ try
 
     var app = builder.Build();
     app.UseExceptionHandler();
+    app.UseUserGuard();
     app.MapCommonApiEndpoints();
     logger = app.Services.GetRequiredService<ILogger<Program>>();
 
@@ -46,10 +49,12 @@ void ConfigureServices(IServiceCollection services, ConfigurationManager configu
     services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
     services.AddCommonApiServices(apiVersion);
+    services.AddUserGuard(configuration);
     services.AddExceptionHandler<GlobalExceptionHandler>();
 
     services.AddSingleton<MongoDbContext>();
     services.AddScoped<IAuthRepository, AuthRepository>();
+    services.AddScoped<IUserGuardAuthStore, AuthUserGuardAuthStore>();
     services.AddScoped<IUserRepository, UserRepository>();
     services.AddScoped<IJwtTokenService, JwtTokenService>();
     services.AddScoped<HandleAuthService>();

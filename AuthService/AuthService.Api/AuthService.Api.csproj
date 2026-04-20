@@ -23,6 +23,7 @@
       <ProjectReference Include="..\..\Ems.Common\Ems.Common.csproj" />
       <ProjectReference Include="..\..\DatabaseService\DatabaseService.csproj" />
       <ProjectReference Include="..\..\UserService\UserService.Data\UserService.Data.csproj" />
+      <ProjectReference Include="..\AuthService.Common\AuthService.Common.csproj" />
       <ProjectReference Include="..\AuthService.Data\AuthService.Data.csproj" />
     </ItemGroup>
 

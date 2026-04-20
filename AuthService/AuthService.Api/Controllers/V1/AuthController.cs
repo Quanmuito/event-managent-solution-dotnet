@@ -1,16 +1,20 @@
 namespace AuthService.Api.Controllers.V1;
 
+using AuthService.Common.Security;
 using AuthService.Api.Models;
 using AuthService.Api.Services;
 using Ems.Common.Http.Responses.Errors;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [ApiVersion("1.0")]
 [Route("/v{version:apiVersion}/auths")]
+[UserGuard]
 public class AuthController(HandleAuthService authService) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto registerDto, CancellationToken cancellationToken)
     {
@@ -21,6 +25,7 @@ public class AuthController(HandleAuthService authService) : ControllerBase
         return Ok(result);
     }
 
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto, CancellationToken cancellationToken)
     {
