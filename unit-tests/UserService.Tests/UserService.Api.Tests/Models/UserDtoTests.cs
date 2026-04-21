@@ -18,6 +18,7 @@ public class UserDtoTests
         result.Id.Should().Be(userEntity.Id);
         result.Email.Should().Be(userEntity.Email);
         result.Phone.Should().Be(userEntity.Phone);
+        result.Roles.Should().Equal(userEntity.Roles);
         result.IsVerified.Should().Be(userEntity.IsVerified);
         result.IsDeleted.Should().Be(userEntity.IsDeleted);
         result.DeletedAt.Should().Be(userEntity.DeletedAt);

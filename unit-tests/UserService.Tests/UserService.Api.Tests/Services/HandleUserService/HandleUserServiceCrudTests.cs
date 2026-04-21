@@ -30,7 +30,7 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
 
         result.Should().NotBeNull();
         result.Should().BeOfType<UserDto>();
-        ServiceTestHelper.AssertDtoMatchesEntity(result, user, "Id", "Email", "Phone", "IsVerified", "IsDeleted", "DeletedAt", "DeletedBy", "DeletedReason", "CreatedAt", "UpdatedAt");
+        ServiceTestHelper.AssertDtoMatchesEntity(result, user, "Id", "Email", "Phone", "Roles", "IsVerified", "IsDeleted", "DeletedAt", "DeletedBy", "DeletedReason", "CreatedAt", "UpdatedAt");
     }
 
     [Fact]
@@ -70,11 +70,13 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
         result.Should().NotBeNull();
         result.Email.Should().Be(dto.Email);
         result.Phone.Should().Be(dto.Phone);
+        result.Roles.Should().Equal(dto.Roles);
         result.IsVerified.Should().Be(dto.IsVerified);
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         _fixture.MockRepository.Verify(x => x.CreateAsync(It.Is<User>(u =>
             u.Email == dto.Email &&
             u.Phone == dto.Phone &&
+            u.Roles == dto.Roles &&
             u.IsVerified == dto.IsVerified), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -85,6 +87,7 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
         var updatedUser = TestDataBuilder.CreateDefaultUser();
         updatedUser.Email = updateDto.Email!;
         updatedUser.Phone = updateDto.Phone!;
+        updatedUser.Roles = updateDto.Roles!;
         updatedUser.IsVerified = updateDto.IsVerified!.Value;
         updatedUser.UpdatedAt = DateTime.UtcNow;
 
@@ -96,6 +99,7 @@ public class HandleUserServiceCrudTests : IClassFixture<HandleUserServiceTestFix
         result.Should().NotBeNull();
         result.Email.Should().Be(updateDto.Email);
         result.Phone.Should().Be(updateDto.Phone);
+        result.Roles.Should().Equal(updateDto.Roles!);
         result.IsVerified.Should().Be(updateDto.IsVerified!.Value);
         result.UpdatedAt.Should().NotBeNull();
         _fixture.MockRepository.Verify(x => x.UpdateAsync("507f1f77bcf86cd799439011", It.IsAny<UpdateDefinition<User>>(), It.IsAny<CancellationToken>()), Times.Once);

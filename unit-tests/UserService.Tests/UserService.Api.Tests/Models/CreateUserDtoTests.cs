@@ -3,6 +3,7 @@ namespace UserService.Api.Tests.Models;
 using FluentAssertions;
 using System.ComponentModel.DataAnnotations;
 using UserService.Api.Models;
+using UserService.Data.Utils;
 using UserService.Tests.Helpers;
 using Xunit;
 
@@ -44,6 +45,17 @@ public class CreateUserDtoTests
         var validationResults = ValidateModel(dto);
 
         validationResults.Should().Contain(v => v.MemberNames.Contains("Email"));
+    }
+
+    [Fact]
+    public void CreateUserDto_WithNoRolesSet_ShouldDefaultToUserRole()
+    {
+        var dto = new CreateUserDto
+        {
+            Email = "valid@example.com"
+        };
+
+        dto.Roles.Should().Equal([UserRoles.USER]);
     }
 
     private static IList<ValidationResult> ValidateModel(object model)

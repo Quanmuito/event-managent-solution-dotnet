@@ -13,6 +13,7 @@ public class UpdateUserDtoTests
 
         dto.Email.Should().BeNull();
         dto.Phone.Should().BeNull();
+        dto.Roles.Should().BeNull();
         dto.IsVerified.Should().BeNull();
     }
 
@@ -26,6 +27,18 @@ public class UpdateUserDtoTests
 
         dto.Email.Should().Be("updated@example.com");
         dto.Phone.Should().BeNull();
+        dto.Roles.Should().BeNull();
         dto.IsVerified.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateUserDto_WithRoles_ShouldSetRoles()
+    {
+        var dto = new UpdateUserDto
+        {
+            Roles = ["user", "organizer"]
+        };
+
+        dto.Roles.Should().Equal(["user", "organizer"]);
     }
 }

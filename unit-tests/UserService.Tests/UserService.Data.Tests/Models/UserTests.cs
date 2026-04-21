@@ -14,6 +14,7 @@ public class UserTests
         {
             Email = dto.Email,
             Phone = dto.Phone,
+            Roles = dto.Roles,
             IsVerified = dto.IsVerified,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = null
@@ -33,6 +34,7 @@ public class UserTests
         result.Should().NotBeNull();
         result.Email.Should().Be(dto.Email);
         result.Phone.Should().Be(dto.Phone);
+        result.Roles.Should().Equal(dto.Roles);
         result.IsVerified.Should().Be(dto.IsVerified);
         result.IsDeleted.Should().BeFalse();
         result.CreatedAt.Should().BeOnOrAfter(beforeCreation);
@@ -50,6 +52,7 @@ public class UserTests
 
         result.Should().NotBeNull();
         result.Phone.Should().BeNull();
+        result.Roles.Should().Equal(dto.Roles);
     }
 
     [Fact]
