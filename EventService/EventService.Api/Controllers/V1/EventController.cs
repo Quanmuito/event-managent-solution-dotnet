@@ -1,16 +1,20 @@
 namespace EventService.Api.Controllers.V1;
 
+using AuthService.Common.Security;
 using EventService.Api.Models;
 using EventService.Api.Services;
 using Ems.Common.Http.Responses.Errors;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [ApiVersion("1.0")]
 [Route("/v{version:apiVersion}/events")]
+[UserGuard]
 public class EventController(HandleEventService eventService) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string? query, CancellationToken cancellationToken)
     {
@@ -21,6 +25,7 @@ public class EventController(HandleEventService eventService) : ControllerBase
         return Ok(results);
     }
 
+    [AllowAnonymous]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {

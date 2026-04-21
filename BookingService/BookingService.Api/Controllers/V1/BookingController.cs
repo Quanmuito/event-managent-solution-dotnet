@@ -1,5 +1,6 @@
 namespace BookingService.Api.Controllers.V1;
 
+using AuthService.Common.Security;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using Ems.Common.Http.Responses.Errors;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("/v{version:apiVersion}/bookings")]
+[UserGuard]
 public class BookingController(HandleBookingService bookingService) : ControllerBase
 {
     [HttpGet("{id}")]

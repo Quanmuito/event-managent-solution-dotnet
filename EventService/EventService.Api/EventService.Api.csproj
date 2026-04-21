@@ -19,6 +19,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\AspNet.Common\AspNet.Common.csproj" />
+      <ProjectReference Include="..\..\AuthService\AuthService.Common\AuthService.Common.csproj" />
       <ProjectReference Include="..\..\Ems.Common\Ems.Common.csproj" />
       <ProjectReference Include="..\..\DatabaseService\DatabaseService.csproj" />
       <ProjectReference Include="..\EventService.Data\EventService.Data.csproj" />
