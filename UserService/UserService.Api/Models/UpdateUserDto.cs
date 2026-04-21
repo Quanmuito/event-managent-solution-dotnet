@@ -12,5 +12,7 @@ public class UpdateUserDto
     [StringLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     public string? Phone { get; set; }
 
+    public string[]? Roles { get; set; }
+
     public bool? IsVerified { get; set; }
 }

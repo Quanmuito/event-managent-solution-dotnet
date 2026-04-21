@@ -25,6 +25,7 @@ public class HandleUserService(IUserRepository userRepository)
         {
             Email = createDto.Email,
             Phone = createDto.Phone,
+            Roles = createDto.Roles,
             IsVerified = createDto.IsVerified,
             CreatedAt = DateTime.UtcNow
         };
@@ -40,6 +41,9 @@ public class HandleUserService(IUserRepository userRepository)
 
         if (updateDto.Phone != null)
             updates.Add(Builders<User>.Update.Set(u => u.Phone, updateDto.Phone));
+
+        if (updateDto.Roles != null)
+            updates.Add(Builders<User>.Update.Set(u => u.Roles, updateDto.Roles));
 
         if (updateDto.IsVerified.HasValue)
             updates.Add(Builders<User>.Update.Set(u => u.IsVerified, updateDto.IsVerified.Value));

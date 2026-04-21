@@ -2,6 +2,7 @@ namespace UserService.Data.Models;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using UserService.Data.Utils;
 
 public class User
 {
@@ -15,6 +16,9 @@ public class User
     [BsonElement("phone")]
     [BsonIgnoreIfNull]
     public string? Phone { get; set; }
+
+    [BsonElement("roles")]
+    public string[] Roles { get; set; } = [UserRoles.USER];
 
     [BsonElement("isVerified")]
     public bool IsVerified { get; set; }

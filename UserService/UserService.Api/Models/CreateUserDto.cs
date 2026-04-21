@@ -1,6 +1,7 @@
 namespace UserService.Api.Models;
 
 using System.ComponentModel.DataAnnotations;
+using UserService.Data.Utils;
 
 public class CreateUserDto
 {
@@ -12,6 +13,8 @@ public class CreateUserDto
     [Phone]
     [StringLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     public string? Phone { get; set; }
+
+    public string[] Roles { get; set; } = [UserRoles.USER];
 
     public bool IsVerified { get; set; }
 }
