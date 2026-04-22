@@ -1,4 +1,5 @@
 using AuthService.Common.Security;
+using AuthService.Common.Security.Extensions;
 using AuthService.Data.Security;
 using AuthService.Api.Services;
 using AuthService.Api.Settings;

@@ -14,12 +14,16 @@ public class JwtTokenServiceTests
     {
         var service = CreateService(CreateValidSettings());
 
-        var token = service.GenerateToken("user-123", "user@example.com");
+        var token = service.GenerateToken("user-123", "user@example.com", ["user", "organizer"]);
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
 
         jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Sub).Value.Should().Be("user-123");
         jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Email).Value.Should().Be("user@example.com");
         jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value.Should().NotBeNullOrWhiteSpace();
+        jwt.Claims.Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+            .Select(c => c.Value)
+            .Should()
+            .Contain(["user", "organizer"]);
     }
 
     [Fact]
@@ -28,7 +32,7 @@ public class JwtTokenServiceTests
         var service = CreateService(CreateValidSettings());
 
         var before = DateTime.UtcNow;
-        var token = service.GenerateToken("user-123", "user@example.com");
+        var token = service.GenerateToken("user-123", "user@example.com", ["user"]);
         var after = DateTime.UtcNow;
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
 
@@ -45,7 +49,7 @@ public class JwtTokenServiceTests
         settings.Secret = "short-secret";
         var service = CreateService(settings);
 
-        var act = () => service.GenerateToken("user-123", "user@example.com");
+        var act = () => service.GenerateToken("user-123", "user@example.com", ["user"]);
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("Jwt secret must be at least 32 characters.");

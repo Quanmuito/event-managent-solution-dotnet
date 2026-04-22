@@ -1,6 +1,6 @@
 namespace AuthService.Api.Controllers.V1;
 
-using AuthService.Common.Security;
+using AuthService.Common.Security.Attributes;
 using AuthService.Api.Models;
 using AuthService.Api.Services;
 using Ems.Common.Http.Responses.Errors;

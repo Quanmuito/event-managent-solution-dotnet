@@ -8,26 +8,16 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-public class UserGuardMiddleware(IOptions<UserGuardOptions> options, IUserGuardAuthStore userGuardAuthStore) : IMiddleware
+public class GuardAuthenticationService(IOptions<UserGuardOptions> options, IUserGuardAuthStore userGuardAuthStore)
 {
     private readonly JwtSecurityTokenHandler _tokenHandler = new();
 
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    public async Task<ClaimsPrincipal?> AuthenticateAsync(HttpContext context)
     {
-        var endpoint = context.GetEndpoint();
-        if (!ShouldGuardEndpoint(endpoint))
-        {
-            await next(context);
-            return;
-        }
-
         var userGuardOptions = options.Value;
         var token = GetBearerToken(context.Request.Headers.Authorization);
         if (string.IsNullOrWhiteSpace(token))
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
-        }
+            return null;
 
         ClaimsPrincipal principal;
         try
@@ -36,30 +26,23 @@ public class UserGuardMiddleware(IOptions<UserGuardOptions> options, IUserGuardA
         }
         catch
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
+            return null;
         }
 
         var userId = principal.FindFirstValue(JwtRegisteredClaimNames.Sub)
                      ?? principal.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId))
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
-        }
+            return null;
 
         var hasMatchingToken = await userGuardAuthStore.HasMatchingTokenAsync(userId, token, context.RequestAborted);
         if (!hasMatchingToken)
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
-        }
+            return null;
 
-        context.User = principal;
-        await next(context);
+        return principal;
     }
 
-    private static bool ShouldGuardEndpoint(Endpoint? endpoint)
+    public static bool ShouldGuardEndpoint<TGuardAttribute>(Endpoint? endpoint)
+        where TGuardAttribute : Attribute
     {
         if (endpoint == null)
             return false;
@@ -67,7 +50,27 @@ public class UserGuardMiddleware(IOptions<UserGuardOptions> options, IUserGuardA
         if (endpoint.Metadata.GetMetadata<IAllowAnonymous>() != null)
             return false;
 
-        return endpoint.Metadata.GetMetadata<UserGuardAttribute>() != null;
+        return endpoint.Metadata.GetMetadata<TGuardAttribute>() != null;
+    }
+
+    public static bool HasAnyRequiredRole(ClaimsPrincipal principal, IReadOnlyCollection<string> requiredRoles)
+    {
+        foreach (var requiredRole in requiredRoles)
+        {
+            if (string.IsNullOrWhiteSpace(requiredRole))
+                continue;
+
+            foreach (var claim in principal.Claims)
+            {
+                if (claim.Type is not ClaimTypes.Role and not "role")
+                    continue;
+
+                if (string.Equals(claim.Value, requiredRole, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     private static TokenValidationParameters BuildValidationParameters(UserGuardOptions userGuardOptions)

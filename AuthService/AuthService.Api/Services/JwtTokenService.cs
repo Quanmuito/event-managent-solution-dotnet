@@ -9,17 +9,24 @@ using Microsoft.IdentityModel.Tokens;
 
 public class JwtTokenService(IOptions<JwtSettings> jwtOptions) : IJwtTokenService
 {
-    public string GenerateToken(string userId, string email)
+    public string GenerateToken(string userId, string email, string[] roles)
     {
         var jwtSettings = jwtOptions.Value;
         ValidateJwtSettings(jwtSettings);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(JwtRegisteredClaimNames.Email, email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+        foreach (var role in roles)
+        {
+            if (string.IsNullOrWhiteSpace(role))
+                continue;
+
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

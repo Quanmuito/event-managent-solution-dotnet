@@ -1,11 +1,12 @@
-namespace AuthService.Common.Tests.Security;
+namespace AuthService.Common.Tests.Security.Middlewares;
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using AuthService.Common.Security;
+using AuthService.Common.Security.Attributes;
+using AuthService.Common.Security.Middlewares;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Xunit;
 
-public class UserGuardMiddlewareTests
+public class OrganizerGuardMiddlewareTests
 {
     private const string Secret = "replace-with-at-least-32-characters-secret-key";
     private const string Issuer = "AuthService";
@@ -25,27 +26,7 @@ public class UserGuardMiddlewareTests
     {
         var middleware = CreateMiddleware(new Mock<IUserGuardAuthStore>().Object);
         var context = new DefaultHttpContext();
-        context.Request.Path = "/v1/events";
         SetEndpointMetadata(context);
-        var nextCalled = false;
-
-        await middleware.InvokeAsync(context, _ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-
-        context.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
-        nextCalled.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WhenEndpointHasAllowAnonymous_ShouldBypassValidation()
-    {
-        var middleware = CreateMiddleware(new Mock<IUserGuardAuthStore>().Object);
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/v1/auths/login";
-        SetEndpointMetadata(context, new UserGuardAttribute(), new AllowAnonymousAttribute());
         var nextCalled = false;
 
         await middleware.InvokeAsync(context, _ =>
@@ -63,8 +44,7 @@ public class UserGuardMiddlewareTests
     {
         var middleware = CreateMiddleware(new Mock<IUserGuardAuthStore>().Object);
         var context = new DefaultHttpContext();
-        context.Request.Path = "/v1/events";
-        SetEndpointMetadata(context, new UserGuardAttribute());
+        SetEndpointMetadata(context, new OrganizerGuardAttribute());
         var nextCalled = false;
 
         await middleware.InvokeAsync(context, _ =>
@@ -78,103 +58,39 @@ public class UserGuardMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_WithMalformedBearerToken_ShouldReturnUnauthorized()
+    public async Task InvokeAsync_WithAuthenticatedNonOrganizer_ShouldReturnForbidden()
     {
-        var middleware = CreateMiddleware(new Mock<IUserGuardAuthStore>().Object);
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/v1/events";
-        context.Request.Headers.Authorization = "Bearer not-a-jwt-token";
-        SetEndpointMetadata(context, new UserGuardAttribute());
-        var nextCalled = false;
-
-        await middleware.InvokeAsync(context, _ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-
-        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
-        nextCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WithExpiredToken_ShouldReturnUnauthorized()
-    {
-        var token = CreateToken(Secret, DateTime.UtcNow.AddMinutes(-1));
-        var middleware = CreateMiddleware(new Mock<IUserGuardAuthStore>().Object);
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/v1/events";
-        context.Request.Headers.Authorization = $"Bearer {token}";
-        SetEndpointMetadata(context, new UserGuardAttribute());
-        var nextCalled = false;
-
-        await middleware.InvokeAsync(context, _ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-
-        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
-        nextCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WithWrongSignature_ShouldReturnUnauthorized()
-    {
-        var token = CreateToken("another-secret-key-with-32-characters", DateTime.UtcNow.AddMinutes(5));
-        var middleware = CreateMiddleware(new Mock<IUserGuardAuthStore>().Object);
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/v1/events";
-        context.Request.Headers.Authorization = $"Bearer {token}";
-        SetEndpointMetadata(context, new UserGuardAttribute());
-        var nextCalled = false;
-
-        await middleware.InvokeAsync(context, _ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-
-        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
-        nextCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WithTokenNotMatchingStore_ShouldReturnUnauthorized()
-    {
-        var token = CreateToken(Secret, DateTime.UtcNow.AddMinutes(5));
-        var store = new Mock<IUserGuardAuthStore>();
-        store.Setup(x => x.HasMatchingTokenAsync(UserId, token, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-        var middleware = CreateMiddleware(store.Object);
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/v1/events";
-        context.Request.Headers.Authorization = $"Bearer {token}";
-        SetEndpointMetadata(context, new UserGuardAttribute());
-        var nextCalled = false;
-
-        await middleware.InvokeAsync(context, _ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-
-        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
-        nextCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WithValidTokenAndStoreMatch_ShouldSetUserAndContinue()
-    {
-        var token = CreateToken(Secret, DateTime.UtcNow.AddMinutes(5));
+        var token = CreateToken(Secret, DateTime.UtcNow.AddMinutes(5), ["user"]);
         var store = new Mock<IUserGuardAuthStore>();
         store.Setup(x => x.HasMatchingTokenAsync(UserId, token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var middleware = CreateMiddleware(store.Object);
         var context = new DefaultHttpContext();
-        context.Request.Path = "/v1/events";
         context.Request.Headers.Authorization = $"Bearer {token}";
-        SetEndpointMetadata(context, new UserGuardAttribute());
+        SetEndpointMetadata(context, new OrganizerGuardAttribute());
+        var nextCalled = false;
+
+        await middleware.InvokeAsync(context, _ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+        nextCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithAuthenticatedOrganizer_ShouldSetUserAndContinue()
+    {
+        var token = CreateToken(Secret, DateTime.UtcNow.AddMinutes(5), ["user", "organizer"]);
+        var store = new Mock<IUserGuardAuthStore>();
+        store.Setup(x => x.HasMatchingTokenAsync(UserId, token, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var middleware = CreateMiddleware(store.Object);
+        var context = new DefaultHttpContext();
+        context.Request.Headers.Authorization = $"Bearer {token}";
+        SetEndpointMetadata(context, new OrganizerGuardAttribute());
         var nextCalled = false;
 
         await middleware.InvokeAsync(context, _ =>
@@ -190,7 +106,7 @@ public class UserGuardMiddlewareTests
         userId.Should().Be(UserId);
     }
 
-    private static UserGuardMiddleware CreateMiddleware(IUserGuardAuthStore userGuardAuthStore)
+    private static OrganizerGuardMiddleware CreateMiddleware(IUserGuardAuthStore userGuardAuthStore)
     {
         var options = Options.Create(new UserGuardOptions
         {
@@ -198,7 +114,8 @@ public class UserGuardMiddlewareTests
             Issuer = Issuer,
             Audience = Audience
         });
-        return new UserGuardMiddleware(options, userGuardAuthStore);
+        var guardAuthenticationService = new GuardAuthenticationService(options, userGuardAuthStore);
+        return new OrganizerGuardMiddleware(guardAuthenticationService);
     }
 
     private static void SetEndpointMetadata(DefaultHttpContext context, params object[] metadata)
@@ -211,13 +128,17 @@ public class UserGuardMiddlewareTests
         context.SetEndpoint(endpoint);
     }
 
-    private static string CreateToken(string secret, DateTime expiresAtUtc)
+    private static string CreateToken(string secret, DateTime expiresAtUtc, string[] roles)
     {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, UserId),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),

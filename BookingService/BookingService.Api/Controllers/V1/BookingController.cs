@@ -1,6 +1,6 @@
 namespace BookingService.Api.Controllers.V1;
 
-using AuthService.Common.Security;
+using AuthService.Common.Security.Attributes;
 using BookingService.Api.Models;
 using BookingService.Api.Services;
 using Ems.Common.Http.Responses.Errors;

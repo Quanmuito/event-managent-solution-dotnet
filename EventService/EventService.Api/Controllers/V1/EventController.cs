@@ -1,6 +1,6 @@
 namespace EventService.Api.Controllers.V1;
 
-using AuthService.Common.Security;
+using AuthService.Common.Security.Attributes;
 using EventService.Api.Models;
 using EventService.Api.Services;
 using Ems.Common.Http.Responses.Errors;

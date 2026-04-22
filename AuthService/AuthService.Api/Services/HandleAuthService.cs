@@ -21,7 +21,7 @@ public class HandleAuthService(IAuthRepository authRepository, IUserRepository u
         if (string.IsNullOrWhiteSpace(createdUser.Id))
             throw new InvalidOperationException("User id was not generated.");
 
-        var token = jwtTokenService.GenerateToken(createdUser.Id!, createdUser.Email);
+        var token = jwtTokenService.GenerateToken(createdUser.Id!, createdUser.Email, createdUser.Roles);
 
         var newAuth = new Auth
         {
@@ -52,7 +52,7 @@ public class HandleAuthService(IAuthRepository authRepository, IUserRepository u
         if (auth.PasswordHash != loginDto.PasswordHash)
             throw new UnauthorizedAccessException("Invalid email or password.");
 
-        var token = jwtTokenService.GenerateToken(user.Id, user.Email);
+        var token = jwtTokenService.GenerateToken(user.Id, user.Email, user.Roles);
         var updates = Builders<Auth>.Update.Combine(
             Builders<Auth>.Update.Set(a => a.Token, token),
             Builders<Auth>.Update.Set(a => a.UpdatedAt, DateTime.UtcNow)

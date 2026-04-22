@@ -1,6 +1,8 @@
-namespace AuthService.Common.Security;
+namespace AuthService.Common.Security.Extensions;
 
 using System.Text;
+using AuthService.Common.Security;
+using AuthService.Common.Security.Middlewares;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -12,7 +14,9 @@ public static class UserGuardServiceCollectionExtensions
         services.AddAuthorization();
         services.Configure<UserGuardOptions>(configuration.GetSection(UserGuardOptions.SectionName));
         services.AddSingleton<IValidateOptions<UserGuardOptions>, UserGuardOptionsValidator>();
+        services.AddTransient<GuardAuthenticationService>();
         services.AddTransient<UserGuardMiddleware>();
+        services.AddTransient<OrganizerGuardMiddleware>();
         return services;
     }
 }

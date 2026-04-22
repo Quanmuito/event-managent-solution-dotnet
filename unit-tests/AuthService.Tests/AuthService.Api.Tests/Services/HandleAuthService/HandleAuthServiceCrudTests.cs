@@ -111,7 +111,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
         var createdUser = TestDataBuilder.CreateUser("507f1f77bcf86cd799439099", registerDto.Email, null);
         _fixture.MockUserRepository.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdUser);
-        _fixture.MockJwtTokenService.Setup(x => x.GenerateToken(createdUser.Id!, createdUser.Email))
+        _fixture.MockJwtTokenService.Setup(x => x.GenerateToken(createdUser.Id!, createdUser.Email, createdUser.Roles))
             .Returns("jwt-token-123");
         _fixture.MockAuthRepository.Setup(x => x.CreateAsync(It.IsAny<Auth>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Auth auth, CancellationToken _) => auth);
@@ -122,7 +122,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
         result.Message.Should().Be("Register success.");
         result.Token.Should().Be("jwt-token-123");
         _fixture.MockUserRepository.Verify(x => x.CreateAsync(It.Is<User>(u => u.Email == registerDto.Email), It.IsAny<CancellationToken>()), Times.Once);
-        _fixture.MockJwtTokenService.Verify(x => x.GenerateToken(createdUser.Id!, createdUser.Email), Times.Once);
+        _fixture.MockJwtTokenService.Verify(x => x.GenerateToken(createdUser.Id!, createdUser.Email, createdUser.Roles), Times.Once);
         _fixture.MockAuthRepository.Verify(x => x.CreateAsync(It.Is<Auth>(a =>
             a.UserId == createdUser.Id &&
             a.PasswordHash == registerDto.PasswordHash &&
@@ -161,7 +161,7 @@ public class HandleAuthServiceCrudTests : IClassFixture<HandleAuthServiceTestFix
             .ReturnsAsync(user);
         _fixture.MockAuthRepository.Setup(x => x.GetByUserIdOrThrowAsync(user.Id!, It.IsAny<CancellationToken>()))
             .ReturnsAsync(auth);
-        _fixture.MockJwtTokenService.Setup(x => x.GenerateToken(user.Id!, user.Email))
+        _fixture.MockJwtTokenService.Setup(x => x.GenerateToken(user.Id!, user.Email, user.Roles))
             .Returns(refreshedToken);
         _fixture.MockAuthRepository.Setup(x => x.UpdateAsync(auth.Id!, It.IsAny<UpdateDefinition<Auth>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(auth);
